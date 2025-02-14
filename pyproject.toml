@@ -18,6 +18,7 @@ python-dotenv = "*"
 fastapi = "*"
 orjson = "*"
 pandas = "*"
+transformers = "*"
 uvicorn = "*"
 
 [build-system]

@@ -16,7 +16,6 @@ WORKDIR /app
 RUN pip install poetry
 RUN poetry config virtualenvs.create false
 RUN poetry install --no-root
-RUN python -m spacy download en_core_web_sm
 
 # expose the port that uvicorn will run the app on
 ENV PORT=8000

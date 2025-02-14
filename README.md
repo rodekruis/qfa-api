@@ -10,7 +10,7 @@ Powered by [open-source language models](https://huggingface.co/). Uses [Poetry]
 
 ## API Usage
 
-See [the docs](https://hia-chatbot.azurewebsites.net/docs).
+See [the docs](https://qfa-api.azurewebsites.net/docs).
 
 ## Configuration
 

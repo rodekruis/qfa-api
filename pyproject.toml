@@ -18,8 +18,6 @@ python-dotenv = "*"
 fastapi = "*"
 orjson = "*"
 pandas = "*"
-torch = "*"
-transformers = "*"
 
 [build-system]
 requires = ["poetry-core"]

@@ -15,12 +15,13 @@ from routes.load import (
     ClassificationSchemaPayload,
     create_classification_schema,
 )
-from transformers import pipeline
+
+# from transformers import pipeline
 
 router = APIRouter()
-zeroshot_classifier = pipeline(
-    "zero-shot-classification", model=os.getenv("ZEROSHOT_CLASSIFIER")
-)
+# zeroshot_classifier = pipeline(
+#     "zero-shot-classification", model=os.getenv("ZEROSHOT_CLASSIFIER")
+# )
 
 
 # {
@@ -70,13 +71,16 @@ async def classify_text(
     response = {}
     hypothesis_template = "This text is about {}"
     labels_1 = cs.get_class_labels(1)
-    output = zeroshot_classifier(
-        text,
-        labels_1,
-        hypothesis_template=hypothesis_template,
-        multi_label=False,
-    )
-    logger.info(output)
+    # output = zeroshot_classifier(
+    #     text,
+    #     labels_1,
+    #     hypothesis_template=hypothesis_template,
+    #     multi_label=False,
+    # )
+    output = {
+        "labels": ["feedback", "complaint", "suggestion"],
+        "scores": [0.9, 0.05, 0.05],
+    }
     label_1 = output["labels"][output["scores"].index(max(output["scores"]))]
     name_1 = cs.get_name_from_label(label_1)
     response[cs.settings["source-level1"]] = name_1

@@ -1,0 +1,8 @@
+﻿Feedback_Type_name;Feedback_Type_label;Feedback_Category_name;Feedback_Category_label;Feedback_Code_name;Feedback_Code_label
+question;Question;;;;
+observation;Observation, perception or belief;;;;
+request;Request or suggestion;request_info;Request for information;request_info_programme;Request for information about programme activity
+request;Request or suggestion;request_info;Request for information;request_info_redcross;Request information about the red cross
+request;Request or suggestion;request_info;Request for information;request_info_other;Request for information about other response actors
+request;Request or suggestion;request_assistance;Request for assistance;request_assistance_assistance;Request for assistance or service
+request;Request or suggestion;request_suggestion;Suggestion to improve services;;

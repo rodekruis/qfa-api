@@ -1,4 +1,5 @@
 # Azure
+tests/*
 .azure/
 
 # Documents

@@ -17,6 +17,7 @@ RUN pip install poetry
 RUN poetry config virtualenvs.create false
 RUN poetry install --no-root
 
+
 # expose the port that uvicorn will run the app on
 ENV PORT=8000
 EXPOSE 8000

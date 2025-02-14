@@ -7,15 +7,12 @@ authors = [
 description = "QFA API"
 readme = "README.md"
 repository = "https://github.com/rodekruis/qfa-api"
-package-mode = false
+packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-azure-ai-ml = "*"
 azure-cosmos = "*"
-azure-identity = "*"
 azure-monitor-opentelemetry-exporter = "*"
-azure-search-documents = "*"
 clean-text = "*"
 python-dotenv = "*"
 fastapi = "*"

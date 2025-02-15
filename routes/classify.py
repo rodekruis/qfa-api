@@ -45,15 +45,19 @@ async def classify_text(
         source=request.headers["source-name"],
         source_settings={k: v for k, v in request.headers.items()},
     )
-    logger.info(f"Classification schema source: {cs.source}")
-    logger.info(f"Classification schema settings: {cs.settings}")
 
     try:
         cs.load_from_cosmos()
     except CosmosResourceNotFoundError:
-        logger.info("Classification schema not found in CosmosDB, loading from source.")
-        create_classification_schema({k: v for k, v in request.headers.items()})
-    cs.load_from_cosmos()
+        logger.info(
+            "Classification schema not found in CosmosDB, loading from source and saving to CosmosDB."
+        )
+        cs = ClassificationSchema(
+            source=request.headers["source-name"],
+            source_settings=request.headers,
+        )
+        cs.load_from_source()
+        cs.save_to_cosmos()
 
     text = payload[request.headers["text-field"]]
     response = {}

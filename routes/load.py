@@ -15,24 +15,6 @@ router = APIRouter()
 
 # key_query_scheme = APIKeyHeader(name="Authorization")
 
-# {
-#   "source_name": "EspoCRM",
-#   "source_origin": "https://cea.feedbackmechanism.demo.510.global/",
-#   "source_authorization": "d6c4cd86ea8509325e802cfdf6094853",
-#   "source_level1": "FeedbackType",
-#   "source_level2": "FeedbackCategory",
-#   "source_level3": "FeedbackCode"
-# }
-
-# {
-#   "source_name": "kobo",
-#   "source_origin": "asroL6e9wJLh62GNSJ7cHR",
-#   "source_authorization": "4eca639d4031e8355f70d87a19b2382afb12f17b",
-#   "source_level1": "Feedback_Type",
-#   "source_level2": "Feedback_Category",
-#   "source_level3": "Feedback_Code"
-# }
-
 
 class ClassificationSchemaPayload(BaseModel):
     source_name: str = Field(
@@ -73,7 +55,7 @@ def create_classification_schema(
     # if api_key != os.environ["API_KEY"]:
     #     raise HTTPException(status_code=401, detail="Unauthorized")
 
-    source_settings = {k.replace("_", "-"): v for k, v in payload.items()}
+    source_settings = {k.replace("_", "-"): v for k, v in payload.__dict__.items()}
     cs = ClassificationSchema(
         source=source_settings["source-name"],
         source_settings=source_settings,

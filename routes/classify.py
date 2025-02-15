@@ -23,17 +23,6 @@ zeroshot_classifier = pipeline(
 )
 
 
-# {
-#   "feedback": "This is a feedback.",
-#   "source_name": "kobo",
-#   "source_origin": "asroL6e9wJLh62GNSJ7cHR",
-#   "source_authorization": "4eca639d4031e8355f70d87a19b2382afb12f17b",
-#   "source_level1": "Feedback_Type",
-#   "source_level2": "Feedback_Category",
-#   "source_level3": "Feedback_Code"
-# }
-
-
 class ClassificationPayload(ClassificationSchemaPayload):
     text_field: str = Field(
         ...,
@@ -77,7 +66,7 @@ async def classify_text(
         multi_label=False,
     )
     label_1 = output["labels"][output["scores"].index(max(output["scores"]))]
-    name_1 = cs.get_name_from_label(label_1)
+    name_1, name_2, name_3 = cs.get_name_from_label(label_1), None, None
     response[cs.settings["source-level1"]] = name_1
     if cs.n_levels > 1:
         labels_2 = cs.get_class_labels(2, parent=name_1)
@@ -113,8 +102,6 @@ async def classify_text(
             else:
                 label_3 = None
             name_3 = cs.get_name_from_label(label_3)
-        else:
-            name_3 = None
         response[cs.settings["source-level3"]] = name_3
 
     # save to source

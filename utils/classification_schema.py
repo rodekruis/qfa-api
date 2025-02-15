@@ -128,89 +128,156 @@ class ClassificationSchema:
             headers = {
                 "Authorization": f"Token {self.settings['source-authorization']}"
             }
-            URL = f"https://kobo.ifrc.org/api/v2/assets/{self.settings['source-origin']}/files"
-            file_url = requests.get(URL, headers=headers).json()["results"][0][
-                "content"
-            ]
-            file = requests.get(file_url, headers=headers, allow_redirects=True)
-            open("schema.csv", "wb").write(file.content)
-            try:
-                df_schema = pd.read_csv("schema.csv")
-            except pd.errors.ParserError:
-                try:
-                    df_schema = pd.read_csv("schema.csv", delimiter=";")
-                except pd.errors.ParserError:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Could not parse the schema file. Please check the file format.",
+            URL = f"https://kobo.ifrc.org/api/v2/assets/{self.settings['source-origin']}/?format=json"
+            form = requests.get(URL, headers=headers).json()["content"]
+            # this method assumes that the form is structured in a way that
+            # 1) classification questions are in order (from level 1 to 3, from top to bottom)
+            # 2) choice_filter is used on level2 question as <level1>=${<source-level1>}
+            # 3) choice_filter is used on level3 question as <level1>=${<source-level1>} and <level2>=${<source-level2>}
+            # 4) <level1> and <level2> appear as extra columns in the choices sheet
+            list1, list2, list3 = None, None, None
+            conditional_column2, conditional_column3 = None, None
+            for question in form["survey"]:
+                if (
+                    question["type"] == "select_one"
+                    and question["name"] == self.settings["source-level1"]
+                ):
+                    list1 = question["select_from_list_name"]
+                if (
+                    question["type"] == "select_one"
+                    and question["name"] == self.settings["source-level2"]
+                ):
+                    list2 = question["select_from_list_name"]
+                    conditional_column2 = (
+                        question["choice_filter"]
+                        .replace(f"=${{{self.settings['source-level1']}}}", "")
+                        .strip()
                     )
-            df_schema_lvl1 = df_schema.dropna(
-                subset=[self.settings["source-level1"] + "_name"]
-            ).drop_duplicates(subset=[self.settings["source-level1"] + "_name"])
-            for ix, level1_record in df_schema_lvl1.iterrows():
-                cs_records.append(
-                    ClassificationSchemaRecord(
-                        name=level1_record[self.settings["source-level1"] + "_name"],
-                        label=level1_record[self.settings["source-level1"] + "_label"],
-                        level=1,
+                if (
+                    question["type"] == "select_one"
+                    and question["name"] == self.settings["source-level3"]
+                ):
+                    list3 = question["select_from_list_name"]
+                    conditional_column3 = (
+                        question["choice_filter"]
+                        .replace(f"=${{{self.settings['source-level2']}}}", "")
+                        .replace(
+                            f"{conditional_column2}=${{{self.settings['source-level1']}}} and ",
+                            "",
+                        )
+                        .strip()
                     )
-                )
-            if self.settings["source-level2"]:
-                df_schema_lvl2 = df_schema.dropna(
-                    subset=[
-                        self.settings["source-level1"] + "_name",
-                        self.settings["source-level2"] + "_name",
-                    ]
-                ).drop_duplicates(
-                    subset=[
-                        self.settings["source-level1"] + "_name",
-                        self.settings["source-level2"] + "_name",
-                    ]
-                )
-                for ix, level2_record in df_schema_lvl2.iterrows():
+
+            for choice in form["choices"]:
+                if choice["list_name"] == list1:
                     cs_records.append(
                         ClassificationSchemaRecord(
-                            name=level2_record[
-                                self.settings["source-level2"] + "_name"
-                            ],
-                            label=level2_record[
-                                self.settings["source-level2"] + "_label"
-                            ],
+                            name=choice["name"],
+                            label=choice["label"][0],
+                            level=1,
+                        )
+                    )
+                if list2 and choice["list_name"] == list2 and conditional_column2:
+                    cs_records.append(
+                        ClassificationSchemaRecord(
+                            name=choice["name"],
+                            label=choice["label"][0],
                             level=2,
-                            parent=level2_record[
-                                self.settings["source-level1"] + "_name"
-                            ],
+                            parent=choice[conditional_column2],
                         )
                     )
-            if self.settings["source-level3"]:
-                df_schema_lvl3 = df_schema.dropna(
-                    subset=[
-                        self.settings["source-level1"] + "_name",
-                        self.settings["source-level2"] + "_name",
-                        self.settings["source-level3"] + "_name",
-                    ]
-                ).drop_duplicates(
-                    subset=[
-                        self.settings["source-level1"] + "_name",
-                        self.settings["source-level2"] + "_name",
-                        self.settings["source-level3"] + "_name",
-                    ]
-                )
-                for ix, level3_record in df_schema_lvl3.iterrows():
+                if list3 and choice["list_name"] == list3 and conditional_column3:
                     cs_records.append(
                         ClassificationSchemaRecord(
-                            name=level3_record[
-                                self.settings["source-level3"] + "_name"
-                            ],
-                            label=level3_record[
-                                self.settings["source-level3"] + "_label"
-                            ],
+                            name=choice["name"],
+                            label=choice["label"][0],
                             level=3,
-                            parent=level3_record[
-                                self.settings["source-level2"] + "_name"
-                            ],
+                            parent=choice[conditional_column3],
                         )
                     )
+
+            # load from attached cvs
+            # URL = f"https://kobo.ifrc.org/api/v2/assets/{self.settings['source-origin']}/files"
+            # file_url = requests.get(URL, headers=headers).json()["results"][0]["content"]
+            # file = requests.get(file_url, headers=headers, allow_redirects=True)
+            # open("schema.csv", "wb").write(file.content)
+            # try:
+            #     df_schema = pd.read_csv("schema.csv")
+            # except pd.errors.ParserError:
+            #     try:
+            #         df_schema = pd.read_csv("schema.csv", delimiter=";")
+            #     except pd.errors.ParserError:
+            #         raise HTTPException(
+            #             status_code=400,
+            #             detail="Could not parse the schema file. Please check the file format.",
+            #         )
+            # df_schema_lvl1 = df_schema.dropna(
+            #     subset=[self.settings["source-level1"] + "_name"]
+            # ).drop_duplicates(subset=[self.settings["source-level1"] + "_name"])
+            # for ix, level1_record in df_schema_lvl1.iterrows():
+            #     cs_records.append(
+            #         ClassificationSchemaRecord(
+            #             name=level1_record[self.settings["source-level1"] + "_name"],
+            #             label=level1_record[self.settings["source-level1"] + "_label"],
+            #             level=1,
+            #         )
+            #     )
+            # if self.settings["source-level2"]:
+            #     df_schema_lvl2 = df_schema.dropna(
+            #         subset=[
+            #             self.settings["source-level1"] + "_name",
+            #             self.settings["source-level2"] + "_name",
+            #         ]
+            #     ).drop_duplicates(
+            #         subset=[
+            #             self.settings["source-level1"] + "_name",
+            #             self.settings["source-level2"] + "_name",
+            #         ]
+            #     )
+            #     for ix, level2_record in df_schema_lvl2.iterrows():
+            #         cs_records.append(
+            #             ClassificationSchemaRecord(
+            #                 name=level2_record[
+            #                     self.settings["source-level2"] + "_name"
+            #                 ],
+            #                 label=level2_record[
+            #                     self.settings["source-level2"] + "_label"
+            #                 ],
+            #                 level=2,
+            #                 parent=level2_record[
+            #                     self.settings["source-level1"] + "_name"
+            #                 ],
+            #             )
+            #         )
+            # if self.settings["source-level3"]:
+            #     df_schema_lvl3 = df_schema.dropna(
+            #         subset=[
+            #             self.settings["source-level1"] + "_name",
+            #             self.settings["source-level2"] + "_name",
+            #             self.settings["source-level3"] + "_name",
+            #         ]
+            #     ).drop_duplicates(
+            #         subset=[
+            #             self.settings["source-level1"] + "_name",
+            #             self.settings["source-level2"] + "_name",
+            #             self.settings["source-level3"] + "_name",
+            #         ]
+            #     )
+            #     for ix, level3_record in df_schema_lvl3.iterrows():
+            #         cs_records.append(
+            #             ClassificationSchemaRecord(
+            #                 name=level3_record[
+            #                     self.settings["source-level3"] + "_name"
+            #                 ],
+            #                 label=level3_record[
+            #                     self.settings["source-level3"] + "_label"
+            #                 ],
+            #                 level=3,
+            #                 parent=level3_record[
+            #                     self.settings["source-level2"] + "_name"
+            #                 ],
+            #             )
+            #         )
         else:
             raise NotImplementedError(
                 f"Classification schema source {self.source} is not supported"

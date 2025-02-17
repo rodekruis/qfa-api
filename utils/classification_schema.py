@@ -144,7 +144,8 @@ class ClassificationSchema:
                 ):
                     list1 = question["select_from_list_name"]
                 if (
-                    question["type"] == "select_one"
+                    "source-level2" in self.settings.keys()
+                    and question["type"] == "select_one"
                     and question["name"] == self.settings["source-level2"]
                 ):
                     list2 = question["select_from_list_name"]
@@ -154,7 +155,8 @@ class ClassificationSchema:
                         .strip()
                     )
                 if (
-                    question["type"] == "select_one"
+                    "source-level3" in self.settings.keys()
+                    and question["type"] == "select_one"
                     and question["name"] == self.settings["source-level3"]
                 ):
                     list3 = question["select_from_list_name"]

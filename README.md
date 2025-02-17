@@ -15,7 +15,7 @@ Powered by [open-source language models](https://huggingface.co/). Uses [Poetry]
    * add up to three cascading select questions of type `select_one`, which determine how the text will be classified. Example: `type`, `category`, `code`.
    * fill in the possible choices in the `choices` sheet of the form exactly as explained [here](https://support.kobotoolbox.org/cascading_select.html#adding-cascading-question-sets-in-xlsform-option-1).
    * upload and deploy the form.
-3. [Register a new Kobo REST Service](https://support.kobotoolbox.org/rest_services.html) and configure it as follows:
+2. [Register a new Kobo REST Service](https://support.kobotoolbox.org/rest_services.html) and configure it as follows:
    * insert as `Endpoint URL`
     ```
     https://qfa-api.azurewebsites.net/classify-text
@@ -30,6 +30,7 @@ Powered by [open-source language models](https://huggingface.co/). Uses [Poetry]
        * under `Name` insert `source-level3` and under `Value` the name of the third of the cascading select questions. Example: `code`.
 
 _That's it_. Your submissions will be automatically classified in a few seconds. Happy qualitative feedback analysis!
+
 
 ![img.png](img.png)
 

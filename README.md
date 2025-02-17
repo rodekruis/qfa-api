@@ -15,6 +15,13 @@ Powered by [open-source language models](https://huggingface.co/). Uses [Poetry]
    * add up to three cascading select questions of type `select_one`, which determine how the text will be classified. Example: `type`, `category`, `code`.
    * fill in the possible choices in the `choices` sheet of the form exactly as explained [here](https://support.kobotoolbox.org/cascading_select.html#adding-cascading-question-sets-in-xlsform-option-1).
    * upload and deploy the form.
+
+> [!TIP]
+> The text will be classified according to the `labels` of the choices. A few tips to improve the accuracy of the classification:
+> * The model can**not** possibly know all humanitarian acronyms, so make sure to spell them out. Example: use `Water, Sanitation and Hygiene` instead of `WASH`, or `Red Crescent` instead of `RC`.
+> * Avoid using ambiguous labels and be specific. Example: use `distribution of non-food items` and `distribution of cash` instead of `relief` and `cash`.
+> * The more choices you provide, the less accurate the classification will be. Keep the number of choices below 10 in each cascading select question.
+
 2. [Register a new Kobo REST Service](https://support.kobotoolbox.org/rest_services.html) and configure it as follows:
    * insert as `Endpoint URL`
     ```

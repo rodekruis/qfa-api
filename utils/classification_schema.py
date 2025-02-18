@@ -3,14 +3,13 @@ from fastapi import HTTPException
 from utils.logger import logger
 from clients.espo_api_client import EspoAPI
 import requests
-import pandas as pd
 from utils.cosmos import cosmos_container_client
 from azure.cosmos.exceptions import CosmosResourceExistsError
 
 
 def formatEntityAsLinkName(entity: str) -> str:
     """
-    Format Entity name to the default EspoCRML link name
+    Format Entity name as the default EspoCRML link name
     """
     # lowercase first letter
     entity = entity[0].lower() + entity[1:]
@@ -20,6 +19,9 @@ def formatEntityAsLinkName(entity: str) -> str:
 
 
 class ClassificationSchemaRecord:
+    """
+    Classification schema record base class
+    """
 
     def __init__(
         self,
@@ -48,7 +50,7 @@ class ClassificationSchemaRecord:
 
 class ClassificationSchema:
     """
-    ClassificationSchema
+    Classification schema base class
     """
 
     def __init__(self, source: str, source_settings: dict = None):
@@ -84,7 +86,7 @@ class ClassificationSchema:
 
     def load_from_source(self):
         """
-        TBI
+        Load classification schema from source
         """
         cs_records = []
         if self.source.lower() == "espocrm":
@@ -123,7 +125,6 @@ class ClassificationSchema:
                     )
 
         elif self.source.lower() == "kobo":
-            # check metadata TBI
             logger.info("Loading classification schema from Kobo.")
             headers = {
                 "Authorization": f"Token {self.settings['source-authorization']}"
@@ -133,7 +134,7 @@ class ClassificationSchema:
             if "content" not in form.keys():
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Kobo form not found or unauthorized: {URL} + {headers} --> {form}",
+                    detail=f"Kobo form {self.settings['source-origin']} not found or unauthorized",
                 )
             form = form["content"]
 
@@ -237,3 +238,14 @@ class ClassificationSchema:
         self.source = schema["source"]
         self.n_levels = schema["n_levels"]
         self.data = [ClassificationSchemaRecord(**record) for record in schema["data"]]
+
+    def remove_from_cosmos(self):
+        """
+        Remove classification schema from CosmosDB
+        """
+        try:
+            cosmos_container_client.delete_item(body=self.settings["source-origin"])
+        except CosmosResourceExistsError:
+            logger.info(
+                f"Classification schema {self.settings['source-origin']} not found in CosmosDB."
+            )

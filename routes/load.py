@@ -1,22 +1,15 @@
 from __future__ import annotations
 from fastapi import (
-    Depends,
     APIRouter,
-    Header,
 )
 from fastapi.responses import JSONResponse
-from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 from utils.classification_schema import ClassificationSchema
-from utils.logger import logger
-import os
 
 router = APIRouter()
 
-# key_query_scheme = APIKeyHeader(name="Authorization")
 
-
-class ClassificationSchemaPayload(BaseModel):
+class CreateClassificationSchemaPayload(BaseModel):
     source_name: str = Field(
         "Kobo",
         description="Source of classification schema.",
@@ -45,15 +38,9 @@ class ClassificationSchemaPayload(BaseModel):
 
 @router.post("/create-classification-schema")
 def create_classification_schema(
-    payload: ClassificationSchemaPayload,
-    # headers: Annotated[
-    #     ClassificationSchemaHeaders, Header()
-    # ],  # , api_key: str = Depends(key_query_scheme)
+    payload: CreateClassificationSchemaPayload,
 ):
     """Create a classification schema. Replace all entries if it already exists."""
-
-    # if api_key != os.environ["API_KEY"]:
-    #     raise HTTPException(status_code=401, detail="Unauthorized")
 
     source_settings = {k.replace("_", "-"): v for k, v in payload.__dict__.items()}
     cs = ClassificationSchema(
@@ -66,13 +53,15 @@ def create_classification_schema(
 
 @router.delete("/delete-classification-schema")
 def delete_classification_schema(
-    payload: ClassificationSchemaPayload,  # , api_key: str = Depends(key_query_scheme)
+    payload: CreateClassificationSchemaPayload,
 ):
     """Delete a classification schema."""
 
-    # if api_key != os.environ["API_KEY"]:
-    #     raise HTTPException(status_code=401, detail="Unauthorized")
-
-    # ...
+    source_settings = {k.replace("_", "-"): v for k, v in payload.__dict__.items()}
+    cs = ClassificationSchema(
+        source=source_settings["source-name"],
+        source_settings=source_settings,
+    )
+    cs.remove_from_cosmos()
 
     return JSONResponse(status_code=200, content=f"Deleted classification schema.")

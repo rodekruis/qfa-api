@@ -14,7 +14,7 @@ def formatEntityAsLinkName(entity: str) -> str:
     """
     # lowercase first letter
     entity = entity[0].lower() + entity[1:]
-    # add Id at the end
+    # add Name at the end
     entity = entity + "Name"
     return entity
 
@@ -129,7 +129,14 @@ class ClassificationSchema:
                 "Authorization": f"Token {self.settings['source-authorization']}"
             }
             URL = f"https://kobo.ifrc.org/api/v2/assets/{self.settings['source-origin']}/?format=json"
-            form = requests.get(URL, headers=headers).json()["content"]
+            form = requests.get(URL, headers=headers).json()
+            if "content" not in form.keys():
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Kobo form not found or unauthorized: {URL} + {headers} --> {form}",
+                )
+            form = form["content"]
+
             # this method assumes that the form is structured in a way that
             # 1) classification questions are in order (from level 1 to 3, from top to bottom)
             # 2) choice_filter is used on level2 question as <level1>=${<source-level1>}

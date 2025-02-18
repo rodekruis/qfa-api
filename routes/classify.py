@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import requests
 import json
-from fastapi import Depends, APIRouter, Header, Request
+from fastapi import Depends, APIRouter, Header, Request, HTTPException
 from fastapi.responses import JSONResponse
 from typing import Annotated
 from fastapi.security import APIKeyHeader
@@ -33,11 +33,20 @@ class ClassificationPayload(ClassificationSchemaPayload):
 @router.post("/classify-text")
 async def classify_text(
     request: Request,
-    dependencies=Annotated[ClassificationPayload, Header()],
+    headers: ClassificationPayload = Header(),
 ):
     """
     Classify text according to classification schema.
     """
+
+    # check if headers are valid
+    for required_header in vars(headers).keys():
+        if required_header.replace("_", "-") not in request.headers:
+            return JSONResponse(
+                content={"error": f"Header '{required_header}' is required."},
+                status_code=400,
+            )
+
     logger.info(f"Classifying text from {request.headers['source-name']}.")
     payload = await request.json()
 
@@ -128,6 +137,9 @@ async def classify_text(
         try:
             kobo_status_code = kobo_response["results"][0]["status_code"]
         except KeyError:
-            kobo_status_code = 500
+            raise HTTPException(
+                status_code=404,
+                detail=f"No Kobo submissions match the given submission IDs: {kobo_payload['submission_ids']}",
+            )
         response["source_response"] = {"status_code": kobo_status_code}
     return JSONResponse(content=response)

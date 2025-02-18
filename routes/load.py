@@ -18,12 +18,12 @@ router = APIRouter()
 
 class ClassificationSchemaPayload(BaseModel):
     source_name: str = Field(
-        "EspoCRM",
+        "Kobo",
         description="Source of classification schema.",
     )
     source_origin: str = Field(
         ...,
-        description="URL or unique identifier of source.",
+        description="Unique identifier of source (asset ID or URL).",
     )
     source_authorization: str = Field(
         ...,

@@ -1,5 +1,5 @@
-from utils.classification_schema import ClassificationSchema
-from utils.classification_result import ClassificationResult
+from classification.schema import ClassificationSchema
+from classification.result import ClassificationResult
 from transformers import pipeline
 import os
 
@@ -30,13 +30,14 @@ class Classifier:
             multi_label=False,
         )
         label_1 = output["labels"][output["scores"].index(max(output["scores"]))]
-        result_level1, result_level2, result_level3 = (
-            self.cs.get_name_from_label(label_1),
-            None,
-            None,
-        )
+        result_level1 = {
+            "label": self.cs.get_name_from_label(label_1),
+            "source_id": self.cs.get_source_id_from_label(label_1),
+        }
+        result_level2 = {"label": "", "source_id": ""}
+        result_level3 = {"label": "", "source_id": ""}
         if self.cs.n_levels > 1:
-            labels_2 = self.cs.get_class_labels(2, parent=result_level1)
+            labels_2 = self.cs.get_class_labels(2, parent=result_level1["label"])
             if len(labels_2) == 1:
                 label_2 = labels_2[0]
             elif len(labels_2) > 1:
@@ -51,10 +52,13 @@ class Classifier:
                 ]
             else:
                 label_2 = None
-            result_level2 = self.cs.get_name_from_label(label_2)
+            result_level2 = {
+                "label": self.cs.get_name_from_label(label_2),
+                "source_id": self.cs.get_source_id_from_label(label_2),
+            }
         if self.cs.n_levels > 2:
             if result_level2:
-                labels_3 = self.cs.get_class_labels(3, parent=result_level2)
+                labels_3 = self.cs.get_class_labels(3, parent=result_level2["label"])
                 if len(labels_3) == 1:
                     label_3 = labels_3[0]
                 elif len(labels_3) > 1:
@@ -69,7 +73,10 @@ class Classifier:
                     ]
                 else:
                     label_3 = None
-                result_level3 = self.cs.get_name_from_label(label_3)
+                result_level3 = {
+                    "label": self.cs.get_name_from_label(label_3),
+                    "source_id": self.cs.get_source_id_from_label(label_3),
+                }
 
         return ClassificationResult(
             text=text,

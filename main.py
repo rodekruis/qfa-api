@@ -36,8 +36,19 @@ description = """
 Qualitative Feedback Analysis.
 
 Built with love by [NLRC 510](https://www.510.global/). See
-[the project on GitHub](https://github.com/rodekruis) or [contact us](mailto:support@510.global).
+[the project on GitHub](https://github.com/rodekruis/qfa-api) or [contact us](mailto:support@510.global).
 """
+
+tags_metadata = [
+    {
+        "name": "classify",
+        "description": "Classify qualitative feedback.",
+        "externalDocs": {
+            "description": "Items external docs",
+            "url": "https://fastapi.tiangolo.com/",
+        },
+    }
+]
 
 # initialize FastAPI
 app = FastAPI(

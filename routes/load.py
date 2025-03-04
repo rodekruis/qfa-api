@@ -1,15 +1,13 @@
 from __future__ import annotations
-from fastapi import (
-    APIRouter,
-)
+from fastapi import APIRouter, Header, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from utils.classification_schema import ClassificationSchema
+from classification.schema import ClassificationSchema
 
 router = APIRouter()
 
 
-class CreateClassificationSchemaPayload(BaseModel):
+class CreateClassificationSchemaHeaders(BaseModel):
     source_name: str = Field(
         "Kobo",
         description="Source of classification schema.",
@@ -38,30 +36,26 @@ class CreateClassificationSchemaPayload(BaseModel):
 
 @router.post("/create-classification-schema")
 def create_classification_schema(
-    payload: CreateClassificationSchemaPayload,
+    request: Request,
+    headers: CreateClassificationSchemaHeaders = Header(),
 ):
     """Create a classification schema. Replace all entries if it already exists."""
 
-    source_settings = {k.replace("_", "-"): v for k, v in payload.__dict__.items()}
-    cs = ClassificationSchema(
-        source=source_settings["source-name"],
-        source_settings=source_settings,
-    )
+    cs = ClassificationSchema(source_settings=request.headers)
     cs.load_from_source()
     cs.save_to_cosmos()
+
+    return JSONResponse(status_code=200, content=f"Created classification schema.")
 
 
 @router.delete("/delete-classification-schema")
 def delete_classification_schema(
-    payload: CreateClassificationSchemaPayload,
+    request: Request,
+    headers: CreateClassificationSchemaHeaders = Header(),
 ):
     """Delete a classification schema."""
 
-    source_settings = {k.replace("_", "-"): v for k, v in payload.__dict__.items()}
-    cs = ClassificationSchema(
-        source=source_settings["source-name"],
-        source_settings=source_settings,
-    )
+    cs = ClassificationSchema(source_settings=request.headers)
     cs.remove_from_cosmos()
 
     return JSONResponse(status_code=200, content=f"Deleted classification schema.")

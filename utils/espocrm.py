@@ -1,6 +1,17 @@
 import requests
 import urllib
-from fastapi import HTTPException
+
+
+def EspoFormatLink(entity: str, name_or_id: str) -> str:
+    """
+    Format Entity name as the default EspoCRML link name or id
+    """
+    assert name_or_id in ["Name", "Id"], "name_or_id must be either 'Name' or 'Id'"
+    # lowercase first letter
+    entity = entity[0].lower() + entity[1:]
+    # add Name at the end
+    entity = entity + name_or_id
+    return entity
 
 
 def http_build_query(data):
@@ -63,17 +74,11 @@ class EspoAPI:
 
         response = requests.request(method, **kwargs)
 
-        self.status_code = response.status_code
-
-        if self.status_code != 200:
-            reason = self.parse_reason(response.headers)
-            raise HTTPException(status_code=response.status_code, detail=f"{reason}")
-
-        data = response.content
-        if not data:
-            raise HTTPException(status_code=204, detail=f"Content response is empty")
-
-        return response.json()
+        return {
+            "status_code": response.status_code,
+            "detail": self.parse_reason(response.headers),
+            "content": response.json(),
+        }
 
     def normalize_url(self, action):
         return self.url + self.url_path + action

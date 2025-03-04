@@ -1,23 +1,33 @@
 from __future__ import annotations
 
 import os
-import requests
-import json
+from typing import Annotated
 from fastapi import APIRouter, Header, Request, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import Field
-from utils.classification_schema import ClassificationSchema
-from utils.classification_result import ClassificationResult
-from azure.cosmos.exceptions import CosmosResourceNotFoundError
+from classification.schema import ClassificationSchema
+from utils.sources import Source
 from utils.logger import logger
-from routes.load import CreateClassificationSchemaPayload
-from utils.classifier import Classifier
+from utils.kobo import clean_kobo_data
+from routes.load import CreateClassificationSchemaHeaders
+from classification.classifier import Classifier
+from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
 router = APIRouter()
 
 
-class ClassifyTextPayload(CreateClassificationSchemaPayload):
-    text_field: str = Field(
+def get_source_text(source_text, payload: dict):
+    if source_text not in payload:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Field '{source_text}' is required in request body.",
+        )
+    else:
+        return payload[source_text]
+
+
+class ClassifyTextHeaders(CreateClassificationSchemaHeaders):
+    source_text: str = Field(
         ...,
         description="Field of request body containing text to be classified.",
     )
@@ -26,47 +36,25 @@ class ClassifyTextPayload(CreateClassificationSchemaPayload):
 @router.post("/classify-text")
 async def classify_text(
     request: Request,
-    headers: ClassifyTextPayload = Header(),
+    headers: Annotated[ClassifyTextHeaders, Header()],
+    save: bool = True,  # save classification results to source
 ):
     """
     Classify text according to classification schema.
     """
 
-    # check if headers are valid
-    for required_header in vars(headers).keys():
-        if required_header.replace("_", "-") not in request.headers:
-            return JSONResponse(
-                content={"error": f"Header '{required_header}' is required."},
-                status_code=400,
-            )
-
     payload = await request.json()
 
-    # check if text field is in payload
-    if request.headers["text-field"] not in payload:
-        return JSONResponse(
-            content={
-                "error": f"Field '{request.headers['text-field']}' is required in request body."
-            },
-            status_code=400,
-        )
-
-    logger.info(f"Classifying text from {request.headers['source-name']}.")
+    logger.info(f"Classifying text from {request.headers['source_name']}.")
 
     # load classification schema
-    cs = ClassificationSchema(
-        source=request.headers["source-name"],
-        source_settings={k: v for k, v in request.headers.items()},
-    )
+    cs = ClassificationSchema(source_settings=request.headers)
+
     try:
         cs.load_from_cosmos()
     except CosmosResourceNotFoundError:
         logger.info(
             "Classification schema not found in CosmosDB, loading from source and saving to CosmosDB."
-        )
-        cs = ClassificationSchema(
-            source=request.headers["source-name"],
-            source_settings=request.headers,
         )
         cs.load_from_source()
         cs.save_to_cosmos()
@@ -77,7 +65,23 @@ async def classify_text(
         cs=cs,
     )
 
-    # classify text
-    result = classifier.classify(text=payload[request.headers["text-field"]])
+    source_text = request.headers["source_text"]
 
-    return result.save_to_source(payload)
+    # data cleaning for kobo repeating_groups
+    if cs.source == Source.KOBO:
+        text = get_source_text(source_text.lower(), clean_kobo_data(payload))
+    else:
+        text = get_source_text(source_text, payload)
+
+    # classify text
+    classification_result = classifier.classify(text=text)
+
+    # save to source
+    if save:
+        save_result = classification_result.save_to_source(payload)
+    else:
+        save_result = JSONResponse(
+            status_code=200, content=classification_result.results()
+        )
+
+    return save_result

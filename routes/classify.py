@@ -36,7 +36,7 @@ class ClassifyTextHeaders(CreateClassificationSchemaHeaders):
 @router.post("/classify-text")
 async def classify_text(
     request: Request,
-    headers: Annotated[ClassifyTextHeaders, Header()],
+    # headers: Annotated[ClassifyTextHeaders, Header()],
     save: bool = True,  # save classification results to source
 ):
     """
@@ -44,6 +44,13 @@ async def classify_text(
     """
 
     payload = await request.json()
+
+    for header in ClassifyTextHeaders.__annotations__.keys():
+        if header not in request.headers:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Header '{header}' is required.",
+            )
 
     logger.info(f"Classifying text from {request.headers['source_name']}.")
 

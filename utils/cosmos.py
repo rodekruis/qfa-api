@@ -16,6 +16,7 @@ cosmos_container_client = cosmos_db.get_container_client("qfa-schema")
 
 
 def cosmos_source_id(source: Source, source_origin: str) -> str:
+    """Simplify source ID for CosmosDB."""
     if source != Source.KOBO:
         source_id = urlparse(source_origin).netloc
     else:

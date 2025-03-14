@@ -81,5 +81,17 @@ app.include_router(classify.router)
 app.include_router(load.router)
 
 
+@app.get("/get-model")
+async def get_model():
+    """Get classification model."""
+    return JSONResponse(
+        status_code=200,
+        content={
+            "provider": "HuggingFace",
+            "model": os.getenv("ZEROSHOT_CLASSIFIER"),
+        },
+    )
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=int(port), reload=True)

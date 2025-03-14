@@ -17,6 +17,7 @@ router = APIRouter()
 
 
 def get_source_text(source_text, payload: dict):
+    """Get text to classify from payload. Raise error if not found."""
     if source_text not in payload:
         raise HTTPException(
             status_code=400,
@@ -59,6 +60,13 @@ async def classify_text(
 
     try:
         cs.load_from_cosmos()
+        # check that classification schema is up-to-date
+        if not cs.is_up_to_date(cs, payload):
+            logger.info(
+                "Classification schema is outdated, loading from source and saving to CosmosDB."
+            )
+            cs.load_from_source()
+            cs.save_to_cosmos()
     except CosmosResourceNotFoundError:
         logger.info(
             "Classification schema not found in CosmosDB, loading from source and saving to CosmosDB."
@@ -72,9 +80,8 @@ async def classify_text(
         cs=cs,
     )
 
+    # get text to classify
     source_text = request.headers["source_text"]
-
-    # data cleaning for kobo repeating_groups
     if cs.source == Source.KOBO:
         text = get_source_text(source_text.lower(), clean_kobo_data(payload))
     else:

@@ -3,9 +3,7 @@ import urllib
 
 
 def EspoFormatLink(entity: str, name_or_id: str) -> str:
-    """
-    Format Entity name as the default EspoCRML link name or id
-    """
+    """Format Entity name as the default EspoCRML link name or id."""
     assert name_or_id in ["Name", "Id"], "name_or_id must be either 'Name' or 'Id'"
     # lowercase first letter
     entity = entity[0].lower() + entity[1:]
@@ -46,6 +44,7 @@ def http_build_query(data):
 
 
 class EspoAPI:
+    """EspoCRM API Client"""
 
     url_path = "/api/v1/"
 

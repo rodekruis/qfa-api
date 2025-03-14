@@ -50,6 +50,7 @@ class ClassificationSchema:
         self.source = Source(source_settings["source_name"].lower())
         self.data = []
         self.n_levels = len(set([record.level for record in self.data]))
+        self.version_id = ""
 
     def get_name_from_label(self, label: str) -> str | None:
         """
@@ -86,6 +87,28 @@ class ClassificationSchema:
                 if record.level == level and record.parent == parent:
                     labels.append(record.label)
         return labels
+
+    def is_up_to_date(self) -> bool:
+        """
+        Check if classification schema is up-to-date by comparing version_id between source and CosmosDB.
+        """
+        is_version_id_up_to_date = True
+        if self.source == Source.KOBO:
+            headers = {
+                "Authorization": f"Token {self.settings['source_authorization']}"
+            }
+            URL = f"https://kobo.ifrc.org/api/v2/assets/{self.settings['source_origin']}/?format=json"
+            form = requests.get(URL, headers=headers).json()
+            if "content" not in form.keys():
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Kobo form {self.settings['source_origin']} not found or unauthorized",
+                )
+            form = form["content"]
+            is_version_id_up_to_date = self.version_id == form["deployed_version_id"]
+        elif self.source == Source.ESPOCRM:
+            is_version_id_up_to_date = True  # TO BE IMPLEMENTED!!!
+        return is_version_id_up_to_date
 
     def load_from_source(self):
         """
@@ -148,6 +171,7 @@ class ClassificationSchema:
                     detail=f"Kobo form {self.settings['source_origin']} not found or unauthorized",
                 )
             form = form["content"]
+            self.version_id = form["deployed_version_id"]
 
             # this method assumes that the form is structured in a way that
             # 1) classification questions are in order (from level 1 to 3, from top to bottom)
@@ -232,6 +256,7 @@ class ClassificationSchema:
             "source": self.source.value,
             "n_levels": self.n_levels,
             "data": [vars(record) for record in self.data],
+            "version_id": self.version_id,
         }
         try:
             cosmos_container_client.create_item(body=schema)

@@ -104,7 +104,6 @@ class ClassificationSchema:
                     status_code=404,
                     detail=f"Kobo form {self.settings['source_origin']} not found or unauthorized",
                 )
-            form = form["content"]
             is_version_id_up_to_date = self.version_id == form["deployed_version_id"]
         elif self.source == Source.ESPOCRM:
             is_version_id_up_to_date = True  # TO BE IMPLEMENTED!!!
@@ -170,8 +169,8 @@ class ClassificationSchema:
                     status_code=404,
                     detail=f"Kobo form {self.settings['source_origin']} not found or unauthorized",
                 )
-            form = form["content"]
             self.version_id = form["deployed_version_id"]
+            form = form["content"]
 
             # this method assumes that the form is structured in a way that
             # 1) classification questions are in order (from level 1 to 3, from top to bottom)
@@ -274,6 +273,7 @@ class ClassificationSchema:
         self.source = Source(schema["source"])
         self.n_levels = schema["n_levels"]
         self.data = [ClassificationSchemaRecord(**record) for record in schema["data"]]
+        self.version_id = schema["version_id"]
 
     def remove_from_cosmos(self):
         """

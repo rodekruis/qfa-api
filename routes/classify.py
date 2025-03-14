@@ -61,7 +61,7 @@ async def classify_text(
     try:
         cs.load_from_cosmos()
         # check that classification schema is up-to-date
-        if not cs.is_up_to_date(cs, payload):
+        if not cs.is_up_to_date():
             logger.info(
                 "Classification schema is outdated, loading from source and saving to CosmosDB."
             )

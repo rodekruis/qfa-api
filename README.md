@@ -86,9 +86,3 @@ poetry install --no-root
 uvicorn main:app --reload
 ```
 
-### Run with Docker
-
-```sh
-docker compose up --detach
-```
-

@@ -39,17 +39,26 @@ class ClassificationResult:
                 self.settings["source_level3"]: self.result_level3["label"],
             }
         elif self.source == Source.ESPOCRM:
-            # dictionary as {<link>: <record id>}
+            # dictionary as {<link>Id: <record id>, <link>Name: <record name>}
             results = {
                 EspoFormatLink(
+                    self.settings["source_level1"], "Name"
+                ): self.result_level1["label"],
+                EspoFormatLink(
                     self.settings["source_level1"], "Id"
-                ): self.result_level1["source_id"],
+                ): self.result_level1["id"],
+                EspoFormatLink(
+                    self.settings["source_level2"], "Name"
+                ): self.result_level2["label"],
                 EspoFormatLink(
                     self.settings["source_level2"], "Id"
-                ): self.result_level2["source_id"],
+                ): self.result_level2["id"],
+                EspoFormatLink(
+                    self.settings["source_level3"], "Name"
+                ): self.result_level3["label"],
                 EspoFormatLink(
                     self.settings["source_level3"], "Id"
-                ): self.result_level3["source_id"],
+                ): self.result_level3["id"],
             }
         else:
             raise HTTPException(

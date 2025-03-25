@@ -22,7 +22,7 @@ class Classifier:
         Classify text
         """
         hypothesis_template = "This text is about {}"
-        labels_1 = self.cs.get_class_labels(1)
+        labels_1 = self.cs.get_labels(level=1)
         output = zeroshot_classifier(
             text,
             labels_1,
@@ -30,14 +30,11 @@ class Classifier:
             multi_label=False,
         )
         label_1 = output["labels"][output["scores"].index(max(output["scores"]))]
-        result_level1 = {
-            "label": self.cs.get_name_from_label(label_1),
-            "source_id": self.cs.get_source_id_from_label(label_1),
-        }
-        result_level2 = {"label": "", "source_id": ""}
-        result_level3 = {"label": "", "source_id": ""}
+        label_2, label_3 = None, None
         if self.cs.n_levels > 1:
-            labels_2 = self.cs.get_class_labels(2, parent=result_level1["label"])
+            labels_2 = self.cs.get_labels(
+                level=2, parent=self.cs.get_id_from_label(label_1)
+            )
             if len(labels_2) == 1:
                 label_2 = labels_2[0]
             elif len(labels_2) > 1:
@@ -50,15 +47,11 @@ class Classifier:
                 label_2 = output["labels"][
                     output["scores"].index(max(output["scores"]))
                 ]
-            else:
-                label_2 = None
-            result_level2 = {
-                "label": self.cs.get_name_from_label(label_2),
-                "source_id": self.cs.get_source_id_from_label(label_2),
-            }
         if self.cs.n_levels > 2:
-            if result_level2:
-                labels_3 = self.cs.get_class_labels(3, parent=result_level2["label"])
+            if label_2:
+                labels_3 = self.cs.get_labels(
+                    level=3, parent=self.cs.get_id_from_label(label_2)
+                )
                 if len(labels_3) == 1:
                     label_3 = labels_3[0]
                 elif len(labels_3) > 1:
@@ -71,17 +64,20 @@ class Classifier:
                     label_3 = output["labels"][
                         output["scores"].index(max(output["scores"]))
                     ]
-                else:
-                    label_3 = None
-                result_level3 = {
-                    "label": self.cs.get_name_from_label(label_3),
-                    "source_id": self.cs.get_source_id_from_label(label_3),
-                }
 
         return ClassificationResult(
             text=text,
-            result_level1=result_level1,
-            result_level2=result_level2,
-            result_level3=result_level3,
+            result_level1={
+                "label": label_1,
+                "id": self.cs.get_id_from_label(label_1),
+            },
+            result_level2={
+                "label": label_2,
+                "id": self.cs.get_id_from_label(label_2),
+            },
+            result_level3={
+                "label": label_3,
+                "id": self.cs.get_id_from_label(label_3),
+            },
             source_settings=self.cs.settings,
         )

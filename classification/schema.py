@@ -15,19 +15,17 @@ class ClassificationSchemaRecord:
 
     def __init__(
         self,
-        name: str,
+        id: str,
         label: str,
         level: int,
         parent: str = None,
-        source_id: str = None,
         examples: List[str] = None,
         has_examples: bool = False,
     ):
-        self.name = name
-        self.label = label
-        self.level = level
-        self.parent = parent
-        self.source_id = source_id
+        self.id = id  # unique ID of the record: Kobo choice name or EspoCRM record id
+        self.label = label  # human-readable label of the record: Kobo choice label or EspoCRM record name
+        self.level = level  # level of the record in the classification schema
+        self.parent = parent  # parent record ID if the record is not at the top level
         if self.level > 1:
             assert self.parent, "Parent is required for records with level above 1"
         self.examples = examples
@@ -46,35 +44,26 @@ class ClassificationSchema:
     """
 
     def __init__(self, source_settings: dict = None):
-        self.settings = source_settings
-        self.source = Source(source_settings["source_name"].lower())
-        self.data = []
-        self.n_levels = len(set([record.level for record in self.data]))
-        self.version_id = ""
+        self.settings = source_settings  # source settings
+        self.source = Source(source_settings["source_name"].lower())  # source name
+        self.data = []  # classification schema records
+        self.n_levels = len(
+            set([record.level for record in self.data])
+        )  # number of levels in the schema
+        self.version_id = ""  # version ID of the schema
 
-    def get_name_from_label(self, label: str) -> str | None:
+    def get_id_from_label(self, label: str) -> str | None:
         """
-        Get class name from label
+        Get class id from label
         """
         if not label:
             return None
         for record in self.data:
             if record.label == label:
-                return record.name
+                return record.id
         raise ValueError(f"Label {label} not found in classification schema")
 
-    def get_source_id_from_label(self, label: str) -> str | None:
-        """
-        Get class source id from label
-        """
-        if not label:
-            return None
-        for record in self.data:
-            if record.label == label:
-                return record.source_id
-        raise ValueError(f"Label {label} not found in classification schema")
-
-    def get_class_labels(self, level: int, parent: str = None) -> List[str]:
+    def get_labels(self, level: int, parent: str = None) -> List[str]:
         """
         Get class labels for a given level and parent name
         """
@@ -124,36 +113,33 @@ class ClassificationSchema:
             for level1_record in list1["list"]:
                 cs_records.append(
                     ClassificationSchemaRecord(
-                        name=level1_record["name"],
+                        id=level1_record["id"],
                         label=level1_record["name"],
                         level=1,
-                        source_id=level1_record["id"],
                     )
                 )
             if self.settings["source_level2"]:
-                level1_link = EspoFormatLink(self.settings["source_level1"], "Name")
+                level1_link = EspoFormatLink(self.settings["source_level1"], "Id")
                 list2 = client.request("GET", self.settings["source_level2"])["content"]
                 for level2_record in list2["list"]:
                     cs_records.append(
                         ClassificationSchemaRecord(
-                            name=level2_record["name"],
+                            id=level2_record["id"],
                             label=level2_record["name"],
                             level=2,
                             parent=level2_record[level1_link],
-                            source_id=level2_record["id"],
                         )
                     )
             if self.settings["source_level3"]:
-                level2_link = EspoFormatLink(self.settings["source_level2"], "Name")
+                level2_link = EspoFormatLink(self.settings["source_level2"], "Id")
                 list3 = client.request("GET", self.settings["source_level3"])["content"]
                 for level3_record in list3["list"]:
                     cs_records.append(
                         ClassificationSchemaRecord(
-                            name=level3_record["name"],
+                            id=level3_record["id"],
                             label=level3_record["name"],
                             level=3,
                             parent=level3_record[level2_link],
-                            source_id=level3_record["id"],
                         )
                     )
 
@@ -216,7 +202,7 @@ class ClassificationSchema:
                 if choice["list_name"] == list1:
                     cs_records.append(
                         ClassificationSchemaRecord(
-                            name=choice["name"],
+                            id=choice["name"],
                             label=choice["label"][0],
                             level=1,
                         )
@@ -224,7 +210,7 @@ class ClassificationSchema:
                 if list2 and choice["list_name"] == list2 and conditional_column2:
                     cs_records.append(
                         ClassificationSchemaRecord(
-                            name=choice["name"],
+                            id=choice["name"],
                             label=choice["label"][0],
                             level=2,
                             parent=choice[conditional_column2],
@@ -233,7 +219,7 @@ class ClassificationSchema:
                 if list3 and choice["list_name"] == list3 and conditional_column3:
                     cs_records.append(
                         ClassificationSchemaRecord(
-                            name=choice["name"],
+                            id=choice["name"],
                             label=choice["label"][0],
                             level=3,
                             parent=choice[conditional_column3],

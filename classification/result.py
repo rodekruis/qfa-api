@@ -63,27 +63,7 @@ class ClassificationResult:
         Save classification result to source
         """
         # save to source
-        if self.source == Source.ESPOCRM:
-            client = EspoAPI(
-                self.settings["source_origin"], self.settings["source_authorization"]
-            )
-            espo_response = client.request(
-                "PUT",
-                f"{self.settings['source_text']}/{payload['_id']}",
-                self.results(),
-            )
-            source_status_code = espo_response["status_code"]
-            source_response = espo_response["content"]
-            source_detail = espo_response["detail"]
-
-            if source_status_code >= 400:
-                if "non-existing record" in source_detail:
-                    source_detail += " Recreating the classification schema will likely solve the problem."
-                raise HTTPException(
-                    status_code=source_status_code, detail=source_detail
-                )
-
-        elif self.source == Source.KOBO:
+        if self.source == Source.KOBO:
             headers = {
                 "Authorization": f"Token {self.settings['source_authorization']}"
             }
@@ -113,8 +93,8 @@ class ClassificationResult:
                 )
         else:
             raise HTTPException(
-                status_code=404,
-                detail=f"save_to_source for source '{self.source.value}' is not supported.",
+                status_code=400,
+                detail=f"Cannot save classification results to {self.source}.",
             )
 
         return JSONResponse(status_code=source_status_code, content=source_response)

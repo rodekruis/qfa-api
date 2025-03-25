@@ -37,8 +37,7 @@ class ClassifyTextHeaders(CreateClassificationSchemaHeaders):
 @router.post("/classify-text", tags=["classify"])
 async def classify_text(
     request: Request,
-    # headers: Annotated[ClassifyTextHeaders, Header()],
-    save: bool = True,  # save classification results to source
+    # headers: Annotated[ClassifyTextHeaders, Header()]
 ):
     """
     Classify text according to classification schema.
@@ -90,10 +89,11 @@ async def classify_text(
     # classify text
     classification_result = classifier.classify(text=text)
 
-    # save to source
-    if save:
+    if cs.source == Source.KOBO:
+        # if source is Kobo, save to source
         save_result = classification_result.save_to_source(payload)
     else:
+        # otherwise, return classification results
         save_result = JSONResponse(
             status_code=200, content=classification_result.results()
         )

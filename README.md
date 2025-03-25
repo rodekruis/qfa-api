@@ -41,7 +41,8 @@ Powered by [open-source language models](https://huggingface.co/). Uses [Poetry]
 _That's it_. Your submissions will be automatically classified in a few seconds. Happy qualitative feedback analysis!
 
 
-![img.png](img.png)
+<img width="763" alt="image" src="https://github.com/user-attachments/assets/919ebe53-17f4-4c5a-8937-baeae32dc4ff" />
+
 
 ### Current limitations using QFA with Kobo forms
 1. It is not possible to use [repeating groups](https://support.kobotoolbox.org/group_repeat.html) in Kobo forms and repeatedly submit the classification request to QFA. If it is needed to copy/paste data from a previous form into another multiple forms, one could look at how to use [dynamic data attachments](https://support.kobotoolbox.org/dynamic_data_attachment.html) instead. 

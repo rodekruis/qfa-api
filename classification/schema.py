@@ -45,7 +45,7 @@ class ClassificationSchema:
 
     def __init__(self, source_settings: dict = None):
         self.settings = source_settings  # source settings
-        self.source = Source(source_settings["source_name"].lower())  # source name
+        self.source = Source(source_settings["source-name"].lower())  # source name
         self.data = []  # classification schema records
         self.n_levels = len(
             set([record.level for record in self.data])
@@ -84,19 +84,19 @@ class ClassificationSchema:
         is_version_id_up_to_date = True
         if self.source == Source.KOBO:
             headers = {
-                "Authorization": f"Token {self.settings['source_authorization']}"
+                "Authorization": f"Token {self.settings['source-authorization']}"
             }
-            URL = f"https://kobo.ifrc.org/api/v2/assets/{self.settings['source_origin']}/?format=json"
+            URL = f"https://kobo.ifrc.org/api/v2/assets/{self.settings['source-origin']}/?format=json"
             form = requests.get(URL, headers=headers).json()
             if "content" not in form.keys():
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Kobo form {self.settings['source_origin']} not found or unauthorized",
+                    detail=f"Kobo form {self.settings['source-origin']} not found or unauthorized",
                 )
             is_version_id_up_to_date = self.version_id == form["deployed_version_id"]
         elif self.source == Source.ESPOCRM:
             client = EspoAPI(
-                self.settings["source_origin"], self.settings["source_authorization"]
+                self.settings["source-origin"], self.settings["source-authorization"]
             )
             params = {
                 "select": "modifiedAt",
@@ -108,7 +108,7 @@ class ClassificationSchema:
             modifiedAts = []
             for lvl in range(1, self.n_levels + 1):
                 modifiedAts.append(
-                    client.request("GET", self.settings[f"source_level{lvl}"], params)[
+                    client.request("GET", self.settings[f"source-level{lvl}"], params)[
                         "content"
                     ]["list"][0]["modifiedAt"]
                 )
@@ -123,9 +123,9 @@ class ClassificationSchema:
         if self.source == Source.ESPOCRM:
             logger.info("Loading classification schema from EspocRM.")
             client = EspoAPI(
-                self.settings["source_origin"], self.settings["source_authorization"]
+                self.settings["source-origin"], self.settings["source-authorization"]
             )
-            list1 = client.request("GET", self.settings["source_level1"])["content"][
+            list1 = client.request("GET", self.settings["source-level1"])["content"][
                 "list"
             ]
             list2, list3 = [], []
@@ -138,9 +138,9 @@ class ClassificationSchema:
                         level=1,
                     )
                 )
-            if self.settings["source_level2"]:
-                level1_link = EspoFormatLink(self.settings["source_level1"], "Id")
-                list2 = client.request("GET", self.settings["source_level2"])[
+            if self.settings["source-level2"]:
+                level1_link = EspoFormatLink(self.settings["source-level1"], "Id")
+                list2 = client.request("GET", self.settings["source-level2"])[
                     "content"
                 ]["list"]
                 for level2_record in list2:
@@ -152,9 +152,9 @@ class ClassificationSchema:
                             parent=level2_record[level1_link],
                         )
                     )
-            if self.settings["source_level3"]:
-                level2_link = EspoFormatLink(self.settings["source_level2"], "Id")
-                list3 = client.request("GET", self.settings["source_level3"])[
+            if self.settings["source-level3"]:
+                level2_link = EspoFormatLink(self.settings["source-level2"], "Id")
+                list3 = client.request("GET", self.settings["source-level3"])[
                     "content"
                 ]["list"]
                 for level3_record in list3:
@@ -175,53 +175,53 @@ class ClassificationSchema:
         elif self.source == Source.KOBO:
             logger.info("Loading classification schema from Kobo.")
             headers = {
-                "Authorization": f"Token {self.settings['source_authorization']}"
+                "Authorization": f"Token {self.settings['source-authorization']}"
             }
-            URL = f"https://kobo.ifrc.org/api/v2/assets/{self.settings['source_origin']}/?format=json"
+            URL = f"https://kobo.ifrc.org/api/v2/assets/{self.settings['source-origin']}/?format=json"
             form = requests.get(URL, headers=headers).json()
             if "content" not in form.keys():
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Kobo form {self.settings['source_origin']} not found or unauthorized",
+                    detail=f"Kobo form {self.settings['source-origin']} not found or unauthorized",
                 )
             self.version_id = form["deployed_version_id"]
             form = form["content"]
 
             # this method assumes that the form is structured in a way that
             # 1) classification questions are in order (from level 1 to 3, from top to bottom)
-            # 2) choice_filter is used on level2 question as <level1>=${<source_level1>}
-            # 3) choice_filter is used on level3 question as <level1>=${<source_level1>} and <level2>=${<source_level2>}
+            # 2) choice_filter is used on level2 question as <level1>=${<source-level1>}
+            # 3) choice_filter is used on level3 question as <level1>=${<source-level1>} and <level2>=${<source-level2>}
             # 4) <level1> and <level2> appear as extra columns in the choices sheet
             list1, list2, list3 = None, None, None
             conditional_column2, conditional_column3 = None, None
             for question in form["survey"]:
                 if (
                     question["type"] == "select_one"
-                    and question["name"] == self.settings["source_level1"]
+                    and question["name"] == self.settings["source-level1"]
                 ):
                     list1 = question["select_from_list_name"]
                 if (
-                    "source_level2" in self.settings.keys()
+                    "source-level2" in self.settings.keys()
                     and question["type"] == "select_one"
-                    and question["name"] == self.settings["source_level2"]
+                    and question["name"] == self.settings["source-level2"]
                 ):
                     list2 = question["select_from_list_name"]
                     conditional_column2 = (
                         question["choice_filter"]
-                        .replace(f"=${{{self.settings['source_level1']}}}", "")
+                        .replace(f"=${{{self.settings['source-level1']}}}", "")
                         .strip()
                     )
                 if (
-                    "source_level3" in self.settings.keys()
+                    "source-level3" in self.settings.keys()
                     and question["type"] == "select_one"
-                    and question["name"] == self.settings["source_level3"]
+                    and question["name"] == self.settings["source-level3"]
                 ):
                     list3 = question["select_from_list_name"]
                     conditional_column3 = (
                         question["choice_filter"]
-                        .replace(f"=${{{self.settings['source_level2']}}}", "")
+                        .replace(f"=${{{self.settings['source-level2']}}}", "")
                         .replace(
-                            f"{conditional_column2}=${{{self.settings['source_level1']}}} and ",
+                            f"{conditional_column2}=${{{self.settings['source-level1']}}} and ",
                             "",
                         )
                         .strip()
@@ -266,7 +266,7 @@ class ClassificationSchema:
         Save classification schema to CosmosDB
         """
         schema = {
-            "id": cosmos_source_id(self.source, self.settings["source_origin"]),
+            "id": cosmos_source_id(self.source, self.settings["source-origin"]),
             "source": self.source.value,
             "n_levels": self.n_levels,
             "data": [vars(record) for record in self.data],
@@ -281,7 +281,7 @@ class ClassificationSchema:
         """
         Load classification schema from CosmosDB
         """
-        source_id = cosmos_source_id(self.source, self.settings["source_origin"])
+        source_id = cosmos_source_id(self.source, self.settings["source-origin"])
         schema = cosmos_container_client.read_item(
             item=source_id, partition_key=self.source.value
         )
@@ -294,7 +294,7 @@ class ClassificationSchema:
         """
         Remove classification schema from CosmosDB
         """
-        source_id = cosmos_source_id(self.source, self.settings["source_origin"])
+        source_id = cosmos_source_id(self.source, self.settings["source-origin"])
         try:
             cosmos_container_client.delete_item(body=source_id)
         except CosmosResourceExistsError:

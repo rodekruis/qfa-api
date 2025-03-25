@@ -3,6 +3,7 @@ from fastapi import APIRouter, Header, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from classification.schema import ClassificationSchema
+from typing import Annotated
 
 router = APIRouter()
 
@@ -36,7 +37,7 @@ class CreateClassificationSchemaHeaders(BaseModel):
 
 @router.post("/create-classification-schema", tags=["classify"])
 def create_classification_schema(
-    request: Request, headers: CreateClassificationSchemaHeaders = Header()
+    request: Request, headers: Annotated[CreateClassificationSchemaHeaders, Header()]
 ):
     """Create a classification schema. Replace all entries if it already exists."""
 
@@ -47,10 +48,17 @@ def create_classification_schema(
     return JSONResponse(status_code=200, content=f"Created classification schema.")
 
 
+class DeleteClassificationSchemaHeaders(BaseModel):
+    source_origin: str = Field(
+        ...,
+        description="Unique identifier of source (asset ID or URL).",
+    )
+
+
 @router.delete("/delete-classification-schema", tags=["classify"])
 def delete_classification_schema(
     request: Request,
-    headers: CreateClassificationSchemaHeaders = Header(),
+    headers: Annotated[CreateClassificationSchemaHeaders, Header()],
 ):
     """Delete a classification schema."""
 

@@ -36,8 +36,7 @@ class ClassifyTextHeaders(CreateClassificationSchemaHeaders):
 
 @router.post("/classify-text", tags=["classify"])
 async def classify_text(
-    request: Request,
-    # headers: Annotated[ClassifyTextHeaders, Header()]
+    request: Request, headers: Annotated[ClassifyTextHeaders, Header()]
 ):
     """
     Classify text according to classification schema.
@@ -45,14 +44,7 @@ async def classify_text(
 
     payload = await request.json()
 
-    for header in ClassifyTextHeaders.__annotations__.keys():
-        if header not in request.headers:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Header '{header}' is required.",
-            )
-
-    logger.info(f"Classifying text from {request.headers['source_name']}.")
+    logger.info(f"Classifying text from {request.headers['source-name']}.")
 
     # load classification schema
     cs = ClassificationSchema(source_settings=request.headers)
@@ -80,7 +72,7 @@ async def classify_text(
     )
 
     # get text to classify
-    source_text = request.headers["source_text"]
+    source_text = request.headers["source-text"]
     if cs.source == Source.KOBO:
         text = get_source_text(source_text.lower(), clean_kobo_data(payload))
     else:

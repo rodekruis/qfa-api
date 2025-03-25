@@ -25,7 +25,7 @@ class ClassificationResult:
         self.result_level2 = result_level2
         self.result_level3 = result_level3
         self.settings = source_settings
-        self.source = Source(source_settings["source_name"].lower())
+        self.source = Source(source_settings["source-name"].lower())
 
     def results(self):
         """
@@ -34,30 +34,30 @@ class ClassificationResult:
         if self.source == Source.KOBO:
             # dictionary as {<question name>: <answer>}
             results = {
-                self.settings["source_level1"]: self.result_level1["label"],
-                self.settings["source_level2"]: self.result_level2["label"],
-                self.settings["source_level3"]: self.result_level3["label"],
+                self.settings["source-level1"]: self.result_level1["label"],
+                self.settings["source-level2"]: self.result_level2["label"],
+                self.settings["source-level3"]: self.result_level3["label"],
             }
         elif self.source == Source.ESPOCRM:
             # dictionary as {<link>Id: <record id>, <link>Name: <record name>}
             results = {
                 EspoFormatLink(
-                    self.settings["source_level1"], "Name"
+                    self.settings["source-level1"], "Name"
                 ): self.result_level1["label"],
                 EspoFormatLink(
-                    self.settings["source_level1"], "Id"
+                    self.settings["source-level1"], "Id"
                 ): self.result_level1["id"],
                 EspoFormatLink(
-                    self.settings["source_level2"], "Name"
+                    self.settings["source-level2"], "Name"
                 ): self.result_level2["label"],
                 EspoFormatLink(
-                    self.settings["source_level2"], "Id"
+                    self.settings["source-level2"], "Id"
                 ): self.result_level2["id"],
                 EspoFormatLink(
-                    self.settings["source_level3"], "Name"
+                    self.settings["source-level3"], "Name"
                 ): self.result_level3["label"],
                 EspoFormatLink(
-                    self.settings["source_level3"], "Id"
+                    self.settings["source-level3"], "Id"
                 ): self.result_level3["id"],
             }
         else:
@@ -74,7 +74,7 @@ class ClassificationResult:
         # save to source
         if self.source == Source.KOBO:
             headers = {
-                "Authorization": f"Token {self.settings['source_authorization']}"
+                "Authorization": f"Token {self.settings['source-authorization']}"
             }
             logger.info(f"Saving classification results to Kobo: {self.results()}")
             kobo_payload = {
@@ -82,7 +82,7 @@ class ClassificationResult:
                 "data": self.results(),
             }
             kobo_response = requests.patch(
-                url=f"https://kobo.ifrc.org/api/v2/assets/{self.settings['source_origin']}/data/bulk/",
+                url=f"https://kobo.ifrc.org/api/v2/assets/{self.settings['source-origin']}/data/bulk/",
                 data={"payload": json.dumps(kobo_payload)},
                 params={"fomat": "json"},
                 headers=headers,

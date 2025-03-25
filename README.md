@@ -30,13 +30,13 @@ Powered by [open-source language models](https://huggingface.co/). Uses [Poetry]
     https://qfa-api.azurewebsites.net/classify-text
     ```
    * add the following headers under `Custom HTTP Headers`:
-       * under `Name` insert `text_field` and under `Value` the name of the text question to be classified. Example: `feedback`.
-       * under `Name` insert `source_name` and under `Value` just `kobo`.
-       * under `Name` insert `source_origin` and under `Value` the ID of the form (see [where to find it](https://im.unhcr.org/kobosupport/)).
-       * under `Name` insert `source_authorization` and under `Value` your Kobo token (see [how to get one](https://support.kobotoolbox.org/api.html#getting-your-api-token)).
-       * under `Name` insert `source_level1` and under `Value` the name of the first of the cascading select questions. Example: `type`.
-       * under `Name` insert `source_level2` and under `Value` the name of the second of the cascading select questions. Example: `category`.
-       * under `Name` insert `source_level3` and under `Value` the name of the third of the cascading select questions. Example: `code`.
+       * under `Name` insert `source-text` and under `Value` the name of the text question to be classified. Example: `feedback`.
+       * under `Name` insert `source-name` and under `Value` just `kobo`.
+       * under `Name` insert `source-origin` and under `Value` the ID of the form (see [where to find it](https://im.unhcr.org/kobosupport/)).
+       * under `Name` insert `source-authorization` and under `Value` your Kobo token (see [how to get one](https://support.kobotoolbox.org/api.html#getting-your-api-token)).
+       * under `Name` insert `source-level1` and under `Value` the name of the first of the cascading select questions. Example: `type`.
+       * under `Name` insert `source-level2` and under `Value` the name of the second of the cascading select questions. Example: `category`.
+       * under `Name` insert `source-level3` and under `Value` the name of the third of the cascading select questions. Example: `code`.
 
 _That's it_. Your submissions will be automatically classified in a few seconds. Happy qualitative feedback analysis!
 
@@ -54,7 +54,7 @@ _That's it_. Your submissions will be automatically classified in a few seconds.
 
 1. Prepare an EspoCRM entity as follows:
    * add one question of type `Text`, whose content will be classified. Example: `feedback`. Tip: enable 'Audited' so that changes can be traced.
-   * add up to three questions of type `Enum`, which determine how the text will be classified. Example: `type`, `category`, `code`..
+   * add up to three questions of type `Enum`, which determine how the text will be classified. Example: `type`, `category`, `code`...
    * ensure the fields are visible in the desired layout.
 
 2. Configure Flowcharts/Workflows. Prerequisite: an installed [Advanced Pack](https://www.espocrm.com/extensions/advanced-pack/)

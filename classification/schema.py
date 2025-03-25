@@ -95,7 +95,24 @@ class ClassificationSchema:
                 )
             is_version_id_up_to_date = self.version_id == form["deployed_version_id"]
         elif self.source == Source.ESPOCRM:
-            is_version_id_up_to_date = True  # TO BE IMPLEMENTED!!!
+            client = EspoAPI(
+                self.settings["source_origin"], self.settings["source_authorization"]
+            )
+            params = {
+                "select": "modifiedAt",
+                "maxSize": 1,
+                "orderBy": "modifiedAt",
+                "order": "desc",
+            }
+            # use as version id the latest modifiedAt
+            modifiedAts = []
+            for lvl in range(1, self.n_levels + 1):
+                modifiedAts.append(
+                    client.request("GET", self.settings[f"source_level{lvl}"], params)[
+                        "content"
+                    ]["list"][0]["modifiedAt"]
+                )
+            is_version_id_up_to_date = self.version_id == max(modifiedAts)
         return is_version_id_up_to_date
 
     def load_from_source(self):
@@ -108,9 +125,12 @@ class ClassificationSchema:
             client = EspoAPI(
                 self.settings["source_origin"], self.settings["source_authorization"]
             )
-            list1 = client.request("GET", self.settings["source_level1"])["content"]
+            list1 = client.request("GET", self.settings["source_level1"])["content"][
+                "list"
+            ]
+            list2, list3 = [], []
             logger.info(f"Level 1 records: {list1}")
-            for level1_record in list1["list"]:
+            for level1_record in list1:
                 cs_records.append(
                     ClassificationSchemaRecord(
                         id=level1_record["id"],
@@ -120,8 +140,10 @@ class ClassificationSchema:
                 )
             if self.settings["source_level2"]:
                 level1_link = EspoFormatLink(self.settings["source_level1"], "Id")
-                list2 = client.request("GET", self.settings["source_level2"])["content"]
-                for level2_record in list2["list"]:
+                list2 = client.request("GET", self.settings["source_level2"])[
+                    "content"
+                ]["list"]
+                for level2_record in list2:
                     cs_records.append(
                         ClassificationSchemaRecord(
                             id=level2_record["id"],
@@ -132,8 +154,10 @@ class ClassificationSchema:
                     )
             if self.settings["source_level3"]:
                 level2_link = EspoFormatLink(self.settings["source_level2"], "Id")
-                list3 = client.request("GET", self.settings["source_level3"])["content"]
-                for level3_record in list3["list"]:
+                list3 = client.request("GET", self.settings["source_level3"])[
+                    "content"
+                ]["list"]
+                for level3_record in list3:
                     cs_records.append(
                         ClassificationSchemaRecord(
                             id=level3_record["id"],
@@ -142,6 +166,11 @@ class ClassificationSchema:
                             parent=level3_record[level2_link],
                         )
                     )
+            self.version_id = max(
+                [level1["modifiedAt"] for level1 in list1]
+                + [level2["modifiedAt"] for level2 in list2]
+                + [level3["modifiedAt"] for level3 in list3]
+            )  # use as version id the latest modifiedAt
 
         elif self.source == Source.KOBO:
             logger.info("Loading classification schema from Kobo.")

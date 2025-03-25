@@ -34,7 +34,7 @@ class ClassifyTextHeaders(CreateClassificationSchemaHeaders):
     )
 
 
-@router.post("/classify-text")
+@router.post("/classify-text", tags=["classify"])
 async def classify_text(
     request: Request,
     # headers: Annotated[ClassifyTextHeaders, Header()],
@@ -99,3 +99,15 @@ async def classify_text(
         )
 
     return save_result
+
+
+@router.get("/get-classification-model", tags=["classify"])
+async def get_classification_model():
+    """Get classification model."""
+    return JSONResponse(
+        status_code=200,
+        content={
+            "provider": "HuggingFace",
+            "model": os.getenv("ZEROSHOT_CLASSIFIER"),
+        },
+    )

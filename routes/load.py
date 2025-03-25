@@ -34,10 +34,9 @@ class CreateClassificationSchemaHeaders(BaseModel):
     )
 
 
-@router.post("/create-classification-schema")
+@router.post("/create-classification-schema", tags=["classify"])
 def create_classification_schema(
-    request: Request,
-    headers: CreateClassificationSchemaHeaders = Header(),
+    request: Request, headers: CreateClassificationSchemaHeaders = Header()
 ):
     """Create a classification schema. Replace all entries if it already exists."""
 
@@ -48,7 +47,7 @@ def create_classification_schema(
     return JSONResponse(status_code=200, content=f"Created classification schema.")
 
 
-@router.delete("/delete-classification-schema")
+@router.delete("/delete-classification-schema", tags=["classify"])
 def delete_classification_schema(
     request: Request,
     headers: CreateClassificationSchemaHeaders = Header(),

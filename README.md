@@ -12,8 +12,8 @@ Powered by [open-source language models](https://huggingface.co/). Uses [Poetry]
 
 1. Prepare a kobo form as follows:
    * add one question of type `text`, whose content will be classified. Example: `feedback`.
-   * add up to three cascading select questions of type `select_one`, which determine how the text will be classified. Example: `type`, `category`, `code`.
-   * fill in the possible choices in the `choices` sheet of the form exactly as explained [here](https://support.kobotoolbox.org/cascading_select.html#adding-cascading-question-sets-in-xlsform-option-1).
+   * add up to three cascading select questions of type `select_one` which will determine how the text will be classified. Example: `type`, `category`, `code`.
+   * fill in the possible choices in the `choices` sheet of the form exactly as explained [here](https://support.kobotoolbox.org/cascading_select.html#adding-cascading-question-sets-in-xlsform-option-1); these choices will be used as labels for the classification.
    * upload and deploy the form.
 
 > [!TIP]
@@ -53,13 +53,12 @@ _That's it_. Your submissions will be automatically classified in a few seconds.
 > [!WARNING]
 > This functionality is not fully developed yet, but part of the documentation is already written
 
-1. Prepare an EspoCRM entity as follows:
-   * add one question of type `Text`, whose content will be classified. Example: `feedback`. Tip: enable 'Audited' so that changes can be traced.
-   * add up to three questions of type `Enum`, which determine how the text will be classified. Example: `type`, `category`, `code`...
-   * ensure the fields are visible in the desired layout.
+Prerequisite: EspoCRM with [Advanced Pack](https://www.espocrm.com/extensions/advanced-pack/) installed.
 
-2. Configure Flowcharts/Workflows. Prerequisite: an installed [Advanced Pack](https://www.espocrm.com/extensions/advanced-pack/)
-   * create a new Flowchart
+1. Prepare EspoCRM as follows:
+   * Add one field of type `Text`, whose content will be classified, to the desired entity. Example: `feedback`. Tip: enable `Audited` so that changes can be traced.
+   * Add up to three entities which will determine how the text will be classified. Example: `Type`, `Category`, `Code`. The records' names will be used as labels for the classification.
+2. Configure a Flowchart/Workflow as follows:
    * _More to come_
 
 One of the features of QFA for EspoCRM is to be able to choose to save the classification result. A potential use case for this is when you want to receive the classification result from QFA but you first want to apply some business logic with the result before saving it to the source entity. The parameter `save` can be used as boolean for this.

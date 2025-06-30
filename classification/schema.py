@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from utils.logger import logger
 from utils.espocrm import EspoAPI, EspoFormatLink
 from utils.sources import Source
+from utils.translate import translate_text
 from utils.cosmos import cosmos_container_client, cosmos_source_id
 from azure.cosmos.exceptions import CosmosResourceExistsError
 import requests
@@ -20,10 +21,15 @@ class ClassificationSchemaRecord:
         level: int,
         parent: str = None,
         examples: List[str] = None,
+        translate: bool = False,
         has_examples: bool = False,
     ):
         self.id = id  # unique ID of the record: Kobo choice name or EspoCRM record id
         self.label = label  # human-readable label of the record: Kobo choice label or EspoCRM record name
+        if translate:
+            self.label_en = translate_text(label)  # class label translated to English
+        else:
+            self.label_en = label
         self.level = level  # level of the record in the classification schema
         self.parent = parent  # parent record ID if the record is not at the top level
         if self.level > 1:
@@ -52,16 +58,27 @@ class ClassificationSchema:
         )  # number of levels in the schema
         self.version_id = ""  # version ID of the schema
 
-    def get_id_from_label(self, label: str) -> str | None:
+    def get_class_id(self, label_en: str) -> str | None:
         """
-        Get class id from label
+        Get class id from label_en
         """
-        if not label:
+        if not label_en:
             return None
         for record in self.data:
-            if record.label == label:
+            if record.label_en == label_en:
                 return record.id
-        raise ValueError(f"Label {label} not found in classification schema")
+        raise ValueError(f"Label {label_en} not found in classification schema")
+
+    def get_class_label(self, label_en: str) -> str | None:
+        """
+        Get class label from label_en
+        """
+        if not label_en:
+            return None
+        for record in self.data:
+            if record.label_en == label_en:
+                return record.label
+        raise ValueError(f"Label {label_en} not found in classification schema")
 
     def get_labels(self, level: int, parent: str = None) -> List[str]:
         """
@@ -71,10 +88,10 @@ class ClassificationSchema:
         for record in self.data:
             if parent is None:
                 if record.level == level:
-                    labels.append(record.label)
+                    labels.append(record.label_en)
             else:
                 if record.level == level and record.parent == parent:
-                    labels.append(record.label)
+                    labels.append(record.label_en)
         return labels
 
     def is_up_to_date(self) -> bool:
@@ -119,6 +136,7 @@ class ClassificationSchema:
         """
         Load classification schema from source
         """
+        translate = self.settings["translate"]
         cs_records = []
         if self.source == Source.ESPOCRM:
             logger.info("Loading classification schema from EspocRM.")
@@ -136,6 +154,7 @@ class ClassificationSchema:
                         id=level1_record["id"],
                         label=level1_record["name"],
                         level=1,
+                        translate=self.settings["translate"],
                     )
                 )
             if self.settings["source-level2"]:
@@ -150,6 +169,7 @@ class ClassificationSchema:
                             label=level2_record["name"],
                             level=2,
                             parent=level2_record[level1_link],
+                            translate=self.settings["translate"],
                         )
                     )
             if self.settings["source-level3"]:
@@ -164,6 +184,7 @@ class ClassificationSchema:
                             label=level3_record["name"],
                             level=3,
                             parent=level3_record[level2_link],
+                            translate=self.settings["translate"],
                         )
                     )
             self.version_id = max(
@@ -234,6 +255,7 @@ class ClassificationSchema:
                             id=choice["name"],
                             label=choice["label"][0],
                             level=1,
+                            translate=self.settings["translate"],
                         )
                     )
                 if list2 and choice["list_name"] == list2 and conditional_column2:
@@ -243,6 +265,7 @@ class ClassificationSchema:
                             label=choice["label"][0],
                             level=2,
                             parent=choice[conditional_column2],
+                            translate=self.settings["translate"],
                         )
                     )
                 if list3 and choice["list_name"] == list3 and conditional_column3:
@@ -252,6 +275,7 @@ class ClassificationSchema:
                             label=choice["label"][0],
                             level=3,
                             parent=choice[conditional_column3],
+                            translate=self.settings["translate"],
                         )
                     )
         else:

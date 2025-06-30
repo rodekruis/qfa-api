@@ -33,6 +33,10 @@ class CreateClassificationSchemaHeaders(BaseModel):
         ...,
         description="Field or entity name of level 3.",
     )
+    translate: bool = Field(
+        default=False,
+        description="Translate schema to English before saving.",
+    )
 
 
 @router.post("/create-classification-schema", tags=["classify"])

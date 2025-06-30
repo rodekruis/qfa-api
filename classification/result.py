@@ -3,6 +3,7 @@ import requests
 from utils.espocrm import EspoAPI, EspoFormatLink
 from utils.sources import Source
 from utils.logger import logger
+from utils.translate import translate_text
 from fastapi.responses import JSONResponse
 import json
 

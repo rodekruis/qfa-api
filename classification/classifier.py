@@ -1,5 +1,6 @@
 from classification.schema import ClassificationSchema
 from classification.result import ClassificationResult
+from utils.translate import translate_text
 from transformers import pipeline
 import os
 
@@ -13,9 +14,10 @@ class Classifier:
     Classifier base class
     """
 
-    def __init__(self, model: str, cs: ClassificationSchema):
+    def __init__(self, model: str, cs: ClassificationSchema, translate: bool = False):
         self.model = model
         self.cs = cs
+        self.translate = translate
 
     def classify(self, text: str) -> ClassificationResult:
         """
@@ -23,6 +25,8 @@ class Classifier:
         """
         hypothesis_template = "This text is about {}"
         labels_1 = self.cs.get_labels(level=1)
+        if self.translate:
+            text = translate_text(text)
         output = zeroshot_classifier(
             text,
             labels_1,
@@ -68,16 +72,16 @@ class Classifier:
         return ClassificationResult(
             text=text,
             result_level1={
-                "label": label_1,
-                "id": self.cs.get_id_from_label(label_1),
+                "label": self.cs.get_class_label(label_en=label_1),
+                "id": self.cs.get_class_id(label_en=label_1),
             },
             result_level2={
-                "label": label_2,
-                "id": self.cs.get_id_from_label(label_2),
+                "label": self.cs.get_class_label(label_en=label_2),
+                "id": self.cs.get_class_id(label_en=label_2),
             },
             result_level3={
-                "label": label_3,
-                "id": self.cs.get_id_from_label(label_3),
+                "label": self.cs.get_class_label(label_en=label_3),
+                "id": self.cs.get_class_id(label_en=label_3),
             },
             source_settings=self.cs.settings,
         )

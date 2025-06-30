@@ -136,7 +136,6 @@ class ClassificationSchema:
         """
         Load classification schema from source
         """
-        translate = self.settings["translate"]
         cs_records = []
         if self.source == Source.ESPOCRM:
             logger.info("Loading classification schema from EspocRM.")

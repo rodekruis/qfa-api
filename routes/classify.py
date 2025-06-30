@@ -9,7 +9,7 @@ from classification.schema import ClassificationSchema
 from utils.sources import Source
 from utils.logger import logger
 from utils.kobo import clean_kobo_data
-from utils.translate import translate
+from utils.translate import translate_text
 from routes.load import CreateClassificationSchemaHeaders
 from classification.classifier import Classifier
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
@@ -86,7 +86,7 @@ async def classify_text(
 
     # translate to English if necessary
     if headers.translate:
-        text = translate(text)
+        text = translate_text(text)
 
     # classify text
     classification_result = classifier.classify(text=text)

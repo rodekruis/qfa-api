@@ -36,9 +36,7 @@ class Classifier:
         label_1 = output["labels"][output["scores"].index(max(output["scores"]))]
         label_2, label_3 = None, None
         if self.cs.n_levels > 1:
-            labels_2 = self.cs.get_labels(
-                level=2, parent=self.cs.get_id_from_label(label_1)
-            )
+            labels_2 = self.cs.get_labels(level=2, parent=self.cs.get_class_id(label_1))
             if len(labels_2) == 1:
                 label_2 = labels_2[0]
             elif len(labels_2) > 1:
@@ -54,7 +52,7 @@ class Classifier:
         if self.cs.n_levels > 2:
             if label_2:
                 labels_3 = self.cs.get_labels(
-                    level=3, parent=self.cs.get_id_from_label(label_2)
+                    level=3, parent=self.cs.get_class_id(label_2)
                 )
                 if len(labels_3) == 1:
                     label_3 = labels_3[0]

@@ -35,7 +35,7 @@ class CreateClassificationSchemaHeaders(BaseModel):
     )
     translate: bool = Field(
         default=False,
-        description="Translate schema to English before saving.",
+        description="Translate text to English.",
     )
 
 

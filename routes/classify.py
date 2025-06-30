@@ -33,10 +33,6 @@ class ClassifyTextHeaders(CreateClassificationSchemaHeaders):
         ...,
         description="Field of request body containing text to be classified.",
     )
-    translate: bool = Field(
-        default=False,
-        description="Translate text to English before classification.",
-    )
 
 
 @router.post("/classify-text", tags=["classify"])
@@ -53,6 +49,7 @@ async def classify_text(
 
     # load classification schema
     cs = ClassificationSchema(source_settings=request.headers)
+    logger.info(cs.settings)
 
     try:
         cs.load_from_cosmos()
@@ -74,6 +71,7 @@ async def classify_text(
     classifier = Classifier(
         model=os.getenv("ZEROSHOT_CLASSIFIER"),
         cs=cs,
+        translate=request.headers.get("translate", False),
     )
 
     # get text to classify
@@ -83,10 +81,6 @@ async def classify_text(
         text = get_source_text(source_text.lower(), clean_kobo_data(payload))
     else:
         text = get_source_text(source_text, payload)
-
-    # translate to English if necessary
-    if headers.translate:
-        text = translate_text(text)
 
     # classify text
     classification_result = classifier.classify(text=text)

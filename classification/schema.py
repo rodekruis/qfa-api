@@ -21,15 +21,14 @@ class ClassificationSchemaRecord:
         level: int,
         parent: str = None,
         examples: List[str] = None,
-        translate: bool = False,
+        label_en: str = None,
         has_examples: bool = False,
     ):
         self.id = id  # unique ID of the record: Kobo choice name or EspoCRM record id
-        self.label = label  # human-readable label of the record: Kobo choice label or EspoCRM record name
-        if translate:
-            self.label_en = translate_text(label)  # class label translated to English
-        else:
-            self.label_en = label
+        self.label = label  # class label
+        self.label_en = (
+            label_en if label_en else label
+        )  # class label translated to English
         self.level = level  # level of the record in the classification schema
         self.parent = parent  # parent record ID if the record is not at the top level
         if self.level > 1:
@@ -82,7 +81,7 @@ class ClassificationSchema:
 
     def get_labels(self, level: int, parent: str = None) -> List[str]:
         """
-        Get class labels for a given level and parent name
+        Get class labels in English for a given level and parent name
         """
         labels = []
         for record in self.data:
@@ -137,6 +136,7 @@ class ClassificationSchema:
         Load classification schema from source
         """
         cs_records = []
+        translate = self.settings.get("translate", False)
         if self.source == Source.ESPOCRM:
             logger.info("Loading classification schema from EspocRM.")
             client = EspoAPI(
@@ -152,8 +152,10 @@ class ClassificationSchema:
                     ClassificationSchemaRecord(
                         id=level1_record["id"],
                         label=level1_record["name"],
+                        label_en=(
+                            translate_text(level1_record["name"]) if translate else None
+                        ),
                         level=1,
-                        translate=self.settings["translate"],
                     )
                 )
             if self.settings["source-level2"]:
@@ -166,9 +168,13 @@ class ClassificationSchema:
                         ClassificationSchemaRecord(
                             id=level2_record["id"],
                             label=level2_record["name"],
+                            label_en=(
+                                translate_text(level2_record["name"])
+                                if translate
+                                else None
+                            ),
                             level=2,
                             parent=level2_record[level1_link],
-                            translate=self.settings["translate"],
                         )
                     )
             if self.settings["source-level3"]:
@@ -181,9 +187,13 @@ class ClassificationSchema:
                         ClassificationSchemaRecord(
                             id=level3_record["id"],
                             label=level3_record["name"],
+                            label_en=(
+                                translate_text(level3_record["name"])
+                                if translate
+                                else None
+                            ),
                             level=3,
                             parent=level3_record[level2_link],
-                            translate=self.settings["translate"],
                         )
                     )
             self.version_id = max(
@@ -253,8 +263,12 @@ class ClassificationSchema:
                         ClassificationSchemaRecord(
                             id=choice["name"],
                             label=choice["label"][0],
+                            label_en=(
+                                translate_text(choice["label"][0])
+                                if translate
+                                else None
+                            ),
                             level=1,
-                            translate=self.settings["translate"],
                         )
                     )
                 if list2 and choice["list_name"] == list2 and conditional_column2:
@@ -262,9 +276,13 @@ class ClassificationSchema:
                         ClassificationSchemaRecord(
                             id=choice["name"],
                             label=choice["label"][0],
+                            label_en=(
+                                translate_text(choice["label"][0])
+                                if translate
+                                else None
+                            ),
                             level=2,
                             parent=choice[conditional_column2],
-                            translate=self.settings["translate"],
                         )
                     )
                 if list3 and choice["list_name"] == list3 and conditional_column3:
@@ -272,9 +290,13 @@ class ClassificationSchema:
                         ClassificationSchemaRecord(
                             id=choice["name"],
                             label=choice["label"][0],
+                            label_en=(
+                                translate_text(choice["label"][0])
+                                if translate
+                                else None
+                            ),
                             level=3,
                             parent=choice[conditional_column3],
-                            translate=self.settings["translate"],
                         )
                     )
         else:

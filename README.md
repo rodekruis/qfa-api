@@ -21,8 +21,8 @@ Powered by [open-source language models](https://huggingface.co/). Uses [Poetry]
 >  * Phrase the label as if explaining to a 10-year-old. This helps the classification model grasp the core idea without unnecessary complexity.
 >  * The model can**not** possibly know all humanitarian acronyms, so make sure to spell them out. Example: use `Water, Sanitation and Hygiene` instead of `WASH`, or `Red Crescent` instead of `RC`.
 > * Avoid using ambiguous labels and be specific. Example: use `distribution of non-food items` and `distribution of cash` instead of `relief` and `cash`.
-> * The more choices in the list you provide, the less accurate the classification will be. Keep the number of choices in the list as low as possible.
-> * Try to use three synonyms when defining a label. Example: use `misinformation, fake news and made-up stories` in one label instead of only `misinformation`.
+> * The more choices you provide, the less accurate the classification will be. Keep the number of choices as low as possible.
+> * Try to use three synonyms when defining a label, for extra clarity. Example: use `misinformation, fake news and made-up stories` instead of only `misinformation`.
 
 2. [Register a new Kobo REST Service](https://support.kobotoolbox.org/rest_services.html) and configure it as follows:
    * insert as `Endpoint URL`
@@ -30,13 +30,14 @@ Powered by [open-source language models](https://huggingface.co/). Uses [Poetry]
     https://qfa-api.azurewebsites.net/classify-text
     ```
    * add the following headers under `Custom HTTP Headers`:
-       * under `Name` insert `source-text` and under `Value` the name of the text question to be classified. Example: `feedback`.
-       * under `Name` insert `source-name` and under `Value` just `kobo`.
-       * under `Name` insert `source-origin` and under `Value` the ID of the form (see [where to find it](https://im.unhcr.org/kobosupport/)).
-       * under `Name` insert `source-authorization` and under `Value` your Kobo token (see [how to get one](https://support.kobotoolbox.org/api.html#getting-your-api-token)).
-       * under `Name` insert `source-level1` and under `Value` the name of the first of the cascading select questions. Example: `type`.
-       * under `Name` insert `source-level2` and under `Value` the name of the second of the cascading select questions. Example: `category`.
-       * under `Name` insert `source-level3` and under `Value` the name of the third of the cascading select questions. Example: `code`.
+       * under `Name` insert `source-text` and under `Value` insert the name of the text question to be classified. Example: `feedback`.
+       * under `Name` insert `source-name` and under `Value` insert `kobo`.
+       * under `Name` insert `source-origin` and under `Value` insert the ID of the form (see [where to find it](https://im.unhcr.org/kobosupport/)).
+       * under `Name` insert `source-authorization` and under `Value` insert your Kobo token (see [how to get one](https://support.kobotoolbox.org/api.html#getting-your-api-token)).
+       * under `Name` insert `source-level1` and under `Value` insert the name of the first of the cascading select questions. Example: `type`.
+       * under `Name` insert `source-level2` and under `Value` insert the name of the second of the cascading select questions. Example: `category`.
+       * under `Name` insert `source-level3` and under `Value` insert the name of the third of the cascading select questions. Example: `code`.
+       * [OPTIONAL] under `Name` insert `translate` and under `Value` insert `true`, if you are using a language other than English; this will translate the text to English before classifying it (the results will still be in the original language, as specified in the classification schema).
 
 _That's it_. Your submissions will be automatically classified in a few seconds. Happy qualitative feedback analysis!
 

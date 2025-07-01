@@ -2,6 +2,8 @@ from classification.schema import ClassificationSchema
 from classification.result import ClassificationResult
 from utils.translate import translate_text
 from transformers import pipeline
+from timeit import default_timer as timer
+from utils.logger import logger
 import os
 
 zeroshot_classifier = pipeline(
@@ -23,10 +25,13 @@ class Classifier:
         """
         Classify text
         """
+        start_classify = timer()
+
         hypothesis_template = "This text is about {}"
         labels_1 = self.cs.get_labels(level=1)
         if self.translate:
             text = translate_text(text)
+        logger.info(f"classify > text translated in {timer() - start_classify}")
         output = zeroshot_classifier(
             text,
             labels_1,
@@ -35,6 +40,7 @@ class Classifier:
         )
         label_1 = output["labels"][output["scores"].index(max(output["scores"]))]
         label_2, label_3 = None, None
+        logger.info(f"classify > classified level 1 in {timer() - start_classify}")
         if self.cs.n_levels > 1:
             labels_2 = self.cs.get_labels(level=2, parent=self.cs.get_class_id(label_1))
             if len(labels_2) == 1:
@@ -49,6 +55,7 @@ class Classifier:
                 label_2 = output["labels"][
                     output["scores"].index(max(output["scores"]))
                 ]
+        logger.info(f"classify > classified level 2 in {timer() - start_classify}")
         if self.cs.n_levels > 2:
             if label_2:
                 labels_3 = self.cs.get_labels(
@@ -66,6 +73,7 @@ class Classifier:
                     label_3 = output["labels"][
                         output["scores"].index(max(output["scores"]))
                     ]
+        logger.info(f"classify > classified level 3 in {timer() - start_classify}")
 
         return ClassificationResult(
             text=text,

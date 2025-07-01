@@ -1,6 +1,7 @@
 import os
 import uuid
 import requests
+from fastapi import HTTPException
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -38,5 +39,8 @@ def translate_text(text: str) -> str:
     translated_text = response[0]["translations"][0]["text"]
 
     if not translated_text:
-        raise ValueError("Translation service returned an empty response.")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Translation service is down, try with translate=false.",
+        )
     return translated_text

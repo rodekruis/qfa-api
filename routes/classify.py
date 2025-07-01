@@ -9,10 +9,10 @@ from classification.schema import ClassificationSchema
 from utils.sources import Source
 from utils.logger import logger
 from utils.kobo import clean_kobo_data
-from utils.translate import translate_text
 from routes.load import CreateClassificationSchemaHeaders
 from classification.classifier import Classifier
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
+from timeit import default_timer as timer
 
 router = APIRouter()
 
@@ -46,10 +46,11 @@ async def classify_text(
     payload = await request.json()
 
     logger.info(f"Classifying text from {request.headers['source-name']}.")
+    start = timer()
 
     # load classification schema
     cs = ClassificationSchema(source_settings=request.headers)
-    logger.info(cs.settings)
+    logger.info(f"Schema initialized in {timer() - start}")
 
     try:
         cs.load_from_cosmos()
@@ -66,6 +67,7 @@ async def classify_text(
         )
         cs.load_from_source()
         cs.save_to_cosmos()
+    logger.info(f"Schema loaded in {timer() - start}")
 
     # initialize classifier
     classifier = Classifier(
@@ -73,6 +75,7 @@ async def classify_text(
         cs=cs,
         translate=request.headers.get("translate", False),
     )
+    logger.info(f"classifier initialized in {timer() - start}")
 
     # get text to classify
     source_text = request.headers["source-text"]
@@ -82,8 +85,12 @@ async def classify_text(
     else:
         text = get_source_text(source_text, payload)
 
+    logger.info(f"text initialized in {timer() - start}")
+
     # classify text
     classification_result = classifier.classify(text=text)
+
+    logger.info(f"text classified in {timer() - start}")
 
     if cs.source == Source.KOBO:
         # if source is Kobo, save to source
@@ -93,6 +100,8 @@ async def classify_text(
         save_result = JSONResponse(
             status_code=200, content=classification_result.results()
         )
+
+    logger.info(f"results saved in {timer() - start}")
 
     return save_result
 

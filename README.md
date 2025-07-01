@@ -30,6 +30,7 @@ Powered by [open-source language models](https://huggingface.co/). Uses [Poetry]
     https://qfa-api.azurewebsites.net/classify-text
     ```
    * add the following headers under `Custom HTTP Headers`:
+       * under `Name` insert `API-KEY` and under `Value` insert the QFA API key (see Bitwarden).
        * under `Name` insert `source-text` and under `Value` insert the name of the text question to be classified. Example: `feedback`.
        * under `Name` insert `source-name` and under `Value` insert `kobo`.
        * under `Name` insert `source-origin` and under `Value` insert the ID of the form (see [where to find it](https://im.unhcr.org/kobosupport/)).

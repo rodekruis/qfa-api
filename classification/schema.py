@@ -79,7 +79,7 @@ class ClassificationSchema:
                 return record.label
         raise ValueError(f"Label {label_en} not found in classification schema")
 
-    def get_labels(self, level: int, parent: str = None) -> List[str]:
+    def get_labels_en(self, level: int, parent: str = None) -> List[str]:
         """
         Get class labels in English for a given level and parent name
         """

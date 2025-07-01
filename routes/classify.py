@@ -54,35 +54,34 @@ async def classify_text(
     logger.info(f"Classifying text from {request.headers['source-name']}.")
 
     # load classification schema
-    cs = ClassificationSchema(source_settings=request.headers)
+    schema = ClassificationSchema(source_settings=request.headers)
 
     try:
-        cs.load_from_cosmos()
+        schema.load_from_cosmos()
         # check that classification schema is up-to-date
-        if not cs.is_up_to_date():
+        if not schema.is_up_to_date():
             logger.info(
                 "Classification schema is outdated, loading from source and saving to CosmosDB."
             )
-            cs.load_from_source()
-            cs.save_to_cosmos()
+            schema.load_from_source()
+            schema.save_to_cosmos()
     except CosmosResourceNotFoundError:
         logger.info(
             "Classification schema not found in CosmosDB, loading from source and saving to CosmosDB."
         )
-        cs.load_from_source()
-        cs.save_to_cosmos()
+        schema.load_from_source()
+        schema.save_to_cosmos()
 
     # initialize classifier
     classifier = Classifier(
-        model=os.getenv("ZEROSHOT_CLASSIFIER"),
-        cs=cs,
+        schema=schema,
         translate=request.headers.get("translate", False),
     )
 
     # get text to classify
     source_text = request.headers["source-text"]
 
-    if cs.source == Source.KOBO:
+    if schema.source == Source.KOBO:
         text = get_source_text(source_text.lower(), clean_kobo_data(payload))
     else:
         text = get_source_text(source_text, payload)
@@ -90,7 +89,7 @@ async def classify_text(
     # classify text
     classification_result = classifier.classify(text=text)
 
-    if cs.source == Source.KOBO:
+    if schema.source == Source.KOBO:
         # if source is Kobo, save to source
         save_result = classification_result.save_to_source(payload)
     else:
@@ -108,7 +107,7 @@ async def get_classification_model():
     return JSONResponse(
         status_code=200,
         content={
-            "provider": "HuggingFace",
-            "model": os.getenv("ZEROSHOT_CLASSIFIER"),
+            "provider": os.getenv("CLASSIFIER_PROVIDER"),
+            "model": os.getenv("CLASSIFIER_MODEL"),
         },
     )

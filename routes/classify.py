@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import os
 from typing import Annotated
-from fastapi import APIRouter, Header, Request, HTTPException
+from fastapi import APIRouter, Header, Request, HTTPException, Depends
+from fastapi.security import APIKeyHeader
 from fastapi.responses import JSONResponse
 from pydantic import Field
 from classification.schema import ClassificationSchema
@@ -14,6 +15,7 @@ from classification.classifier import Classifier
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
 router = APIRouter()
+header_API_key = APIKeyHeader(name="API-KEY")
 
 
 def get_source_text(source_text, payload: dict):
@@ -36,11 +38,16 @@ class ClassifyTextHeaders(CreateClassificationSchemaHeaders):
 
 @router.post("/classify-text", tags=["classify"])
 async def classify_text(
-    request: Request, headers: Annotated[ClassifyTextHeaders, Header()]
+    request: Request,
+    headers: Annotated[ClassifyTextHeaders, Header()],
+    key: str = Depends(header_API_key),
 ):
     """
     Classify text according to classification schema.
     """
+
+    if key != os.getenv("API_KEY"):
+        raise HTTPException(status_code=403)
 
     payload = await request.json()
 

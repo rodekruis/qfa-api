@@ -1,11 +1,14 @@
 from __future__ import annotations
-from fastapi import APIRouter, Header, Request
+from fastapi import APIRouter, Header, Request, Depends, HTTPException
+from fastapi.security import APIKeyHeader
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from classification.schema import ClassificationSchema
 from typing import Annotated
+import os
 
 router = APIRouter()
+header_API_key = APIKeyHeader(name="API-KEY")
 
 
 class CreateClassificationSchemaHeaders(BaseModel):
@@ -41,9 +44,14 @@ class CreateClassificationSchemaHeaders(BaseModel):
 
 @router.post("/create-classification-schema", tags=["classify"])
 def create_classification_schema(
-    request: Request, headers: Annotated[CreateClassificationSchemaHeaders, Header()]
+    request: Request,
+    headers: Annotated[CreateClassificationSchemaHeaders, Header()],
+    key: str = Depends(header_API_key),
 ):
     """Create a classification schema. Replace all entries if it already exists."""
+
+    if key != os.getenv("API_KEY"):
+        raise HTTPException(status_code=403)
 
     cs = ClassificationSchema(source_settings=request.headers)
     cs.load_from_source()
@@ -63,8 +71,12 @@ class DeleteClassificationSchemaHeaders(BaseModel):
 def delete_classification_schema(
     request: Request,
     headers: Annotated[CreateClassificationSchemaHeaders, Header()],
+    key: str = Depends(header_API_key),
 ):
     """Delete a classification schema."""
+
+    if key != os.getenv("API_KEY"):
+        raise HTTPException(status_code=403)
 
     cs = ClassificationSchema(source_settings=request.headers)
     cs.remove_from_cosmos()

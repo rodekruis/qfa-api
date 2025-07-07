@@ -1,9 +1,7 @@
 from fastapi import HTTPException
 import requests
-from utils.espocrm import EspoAPI, EspoFormatLink
 from utils.sources import Source
 from utils.logger import logger
-from utils.translate import translate_text
 from fastapi.responses import JSONResponse
 import json
 
@@ -42,24 +40,12 @@ class ClassificationResult:
         elif self.source == Source.ESPOCRM:
             # dictionary as {<link>Id: <record id>, <link>Name: <record name>}
             results = {
-                EspoFormatLink(
-                    self.settings["source-level1"], "Name"
-                ): self.result_level1["label"],
-                EspoFormatLink(
-                    self.settings["source-level1"], "Id"
-                ): self.result_level1["id"],
-                EspoFormatLink(
-                    self.settings["source-level2"], "Name"
-                ): self.result_level2["label"],
-                EspoFormatLink(
-                    self.settings["source-level2"], "Id"
-                ): self.result_level2["id"],
-                EspoFormatLink(
-                    self.settings["source-level3"], "Name"
-                ): self.result_level3["label"],
-                EspoFormatLink(
-                    self.settings["source-level3"], "Id"
-                ): self.result_level3["id"],
+                self.settings["source-level1"] + "Name": self.result_level1["label"],
+                self.settings["source-level1"] + "Id": self.result_level1["id"],
+                self.settings["source-level2"] + "Name": self.result_level2["label"],
+                self.settings["source-level2"] + "Id": self.result_level2["id"],
+                self.settings["source-level3"] + "Name": self.result_level3["label"],
+                self.settings["source-level3"] + "Id": self.result_level3["id"],
             }
         else:
             raise HTTPException(

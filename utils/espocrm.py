@@ -1,15 +1,35 @@
 import requests
 import urllib
+from fastapi import HTTPException
 
 
-def EspoFormatLink(entity: str, name_or_id: str) -> str:
-    """Format Entity name as the default EspoCRML link name or id."""
-    assert name_or_id in ["Name", "Id"], "name_or_id must be either 'Name' or 'Id'"
+def GetParentID(entity: str, record: dict) -> str:
+    """Get parent ID from link field."""
     # lowercase first letter
     entity = entity[0].lower() + entity[1:]
     # add Name at the end
-    entity = entity + name_or_id
-    return entity
+    entity = entity + "Id"
+    if entity in record:
+        link = record[entity]
+    else:
+        # remove the first letter
+        entity2 = entity[1:]
+        # lowercase first letter
+        entity2 = entity2[0].lower() + entity2[1:]
+        if entity2 in record:
+            link = record[entity2]
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Link name in schema must be {entity} or {entity2}.",
+            )
+    if not link:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Classification schema records of level > 1 must have a parent.",
+        )
+    else:
+        return link
 
 
 def http_build_query(data):

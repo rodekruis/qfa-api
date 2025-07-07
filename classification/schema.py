@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import HTTPException
 from utils.logger import logger
-from utils.espocrm import EspoAPI, EspoFormatLink
+from utils.espocrm import EspoAPI, GetParentID
 from utils.sources import Source
 from utils.translate import translate_text
 from utils.cosmos import cosmos_container_client, cosmos_source_id
@@ -159,7 +159,6 @@ class ClassificationSchema:
                     )
                 )
             if self.settings["source-level2"]:
-                level1_link = EspoFormatLink(self.settings["source-level1"], "Id")
                 list2 = client.request("GET", self.settings["source-level2"])[
                     "content"
                 ]["list"]
@@ -174,11 +173,12 @@ class ClassificationSchema:
                                 else None
                             ),
                             level=2,
-                            parent=level2_record[level1_link],
+                            parent=GetParentID(
+                                self.settings["source-level1"], level2_record
+                            ),
                         )
                     )
             if self.settings["source-level3"]:
-                level2_link = EspoFormatLink(self.settings["source-level2"], "Id")
                 list3 = client.request("GET", self.settings["source-level3"])[
                     "content"
                 ]["list"]
@@ -193,7 +193,9 @@ class ClassificationSchema:
                                 else None
                             ),
                             level=3,
-                            parent=level3_record[level2_link],
+                            parent=GetParentID(
+                                self.settings["source-level2"], level3_record
+                            ),
                         )
                     )
             self.version_id = max(

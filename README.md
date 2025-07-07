@@ -62,8 +62,9 @@ Prerequisite: EspoCRM with [Advanced Pack](https://www.espocrm.com/extensions/ad
    * Create a new role with `Read` permissions over `Type`, `Category`, `Code`, and assign this role to a new API user.
 
 > [!IMPORTANT]
-> The classification schema is strictly hierarchical: each lower-level record must have a higher-level parent record, e.g.
-> each record of `Category` must have a parent record of `Type`, and each record of `Code` must have a parent record of `Category`.
+> The classification schema is strictly hierarchical: each record of a low-level entity must be related to a record of
+> a high-level entity, e.g. each record of `Category` must be related to a record of `Type`, and each record of
+> `Code` must be related to a record of `Category`.
 
 2. Classification can then be performed automatically via Flowchart, using a Task with two Actions: 
    * `Send HTTP Request` to the QFA API

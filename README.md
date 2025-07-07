@@ -60,6 +60,11 @@ Prerequisite: EspoCRM with [Advanced Pack](https://www.espocrm.com/extensions/ad
    * Create or select up to three entities which will determine how the text will be classified, e.g. `Type`, `Category`, `Code`. The records' names will be used as labels for the classification.
    * Link these three entities to the entity that will be classified, by creating a relationship of type `Many-to-One` for each of them.
    * Create a new role with `Read` permissions over `Type`, `Category`, `Code`, and assign this role to a new API user.
+
+> [!IMPORTANT]
+> The classification schema is strictly hierarchical: each lower-level record must have a higher-level parent record, e.g.
+> each record of `Category` must have a parent record of `Type`, and each record of `Code` must have a parent record of `Category`.
+
 2. Classification can then be performed automatically via Flowchart, using a Task with two Actions: 
    * `Send HTTP Request` to the QFA API
 ```

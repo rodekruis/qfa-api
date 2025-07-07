@@ -83,6 +83,7 @@ source-authorization: <your EspoCRM API key>
 source-level1: Type
 source-level2: Category
 source-level3: Code
+[OPTIONAL] translate: true
 
 Payload
 {

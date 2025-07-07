@@ -52,20 +52,46 @@ _That's it_. Your submissions will be automatically classified in a few seconds.
 
 ## Setup classification with EspoCRM
 
-> [!WARNING]
-> This functionality is not fully developed yet, but part of the documentation is already written
-
 Prerequisite: EspoCRM with [Advanced Pack](https://www.espocrm.com/extensions/advanced-pack/) installed.
 
 1. Prepare EspoCRM as follows:
-   * Add one field of type `Text`, whose content will be classified, to the desired entity. Example: `feedback`. Tip: enable `Audited` so that changes can be traced.
-   * Add up to three entities which will determine how the text will be classified. Example: `Type`, `Category`, `Code`. The records' names will be used as labels for the classification.
-2. Configure a Flowchart/Workflow as follows:
-   * _More to come_
+   * Create or select one entity which will be classified, e.g. `Feedback`.
+   * Create or select one field of type `Text`, whose content will be classified, e.g. `feedbackText`. Tip: enable `Audited` so that changes can be traced.
+   * Create or select up to three entities which will determine how the text will be classified, e.g. `Type`, `Category`, `Code`. The records' names will be used as labels for the classification.
+   * Link these three entities to the entity that will be classified, by creating a relationship of type `Many-to-One` for each of them.
+   * Create a new role with `Read` permissions over `Type`, `Category`, `Code`, and assign this role to a new API user.
+2. Classification can then be performed automatically via Flowchart, using a Task with two Actions: 
+   * `Send HTTP Request` to the QFA API
+```
+Request Type
+POST
 
-One of the features of QFA for EspoCRM is to be able to choose to save the classification result. A potential use case for this is when you want to receive the classification result from QFA but you first want to apply some business logic with the result before saving it to the source entity. The parameter `save` can be used as boolean for this.
+URL
+https://qfa-api.azurewebsites.net/classify-text
 
-Another functionality for EspoCRM is to the possibility to add `examples` for each label. This can be used to provide sample text or data that illustrates the type of content that falls under a particular classification. This can be useful for training, testing, and validating the classification model. 
+Headers
+API-KEY: <QFA API key>
+source-name: espocrm
+source-origin: <your EspoCRM instance URL>
+source-authorization: <your EspoCRM API key>
+source-level1: Type
+source-level2: Category
+source-level3: Code
+
+Payload
+{
+    "text": "{$feedbackText}",
+}
+```
+
+   * `Execute Formula Script` to save results to 
+```
+typeId = json\retrieve($_lastHttpResponseBody, 'TypeId');
+categoryId = json\retrieve($_lastHttpResponseBody, 'CategoryId');
+codeId = json\retrieve($_lastHttpResponseBody, 'CodeId');
+```
+
+
 
 
 ## API Usage

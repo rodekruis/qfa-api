@@ -29,17 +29,10 @@ def get_source_text(source_text, payload: dict):
         return payload[source_text]
 
 
-class ClassifyTextHeaders(CreateClassificationSchemaHeaders):
-    source_text: str = Field(
-        ...,
-        description="Field of request body containing text to be classified.",
-    )
-
-
 @router.post("/classify-text", tags=["classify"])
 async def classify_text(
     request: Request,
-    headers: Annotated[ClassifyTextHeaders, Header()],
+    headers: Annotated[CreateClassificationSchemaHeaders, Header()],
     key: str = Depends(header_API_key),
 ):
     """
@@ -79,12 +72,17 @@ async def classify_text(
     )
 
     # get text to classify
-    source_text = request.headers["source-text"]
-
     if schema.source == Source.KOBO:
+        if "source-text" not in request.headers:
+            raise HTTPException(
+                status_code=400,
+                detail="Header 'source-text' is required for Kobo, "
+                "specifying the name of the question to be classified.",
+            )
+        source_text = request.headers["source-text"]
         text = get_source_text(source_text.lower(), clean_kobo_data(payload))
     else:
-        text = get_source_text(source_text, payload)
+        text = get_source_text("text", payload)
 
     # classify text
     classification_result = classifier.classify(text=text)

@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from classification.schema import ClassificationSchema
 from typing import Annotated
+from utils.logger import logger
 import os
 
 router = APIRouter()
@@ -52,7 +53,14 @@ def create_classification_schema(
 
     if key != os.getenv("API_KEY"):
         raise HTTPException(status_code=403)
-
+    extra_logs = {
+        "source-name": request.headers["source-name"].lower(),
+        "source-origin": request.headers["source-origin"],
+    }
+    logger.info(
+        f"Loading classification schema and saving to CosmosDB.",
+        extra=extra_logs,
+    )
     cs = ClassificationSchema(source_settings=request.headers)
     cs.load_from_source()
     cs.save_to_cosmos()

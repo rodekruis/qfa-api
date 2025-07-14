@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import HTTPException
-from utils.logger import logger
+from utils.logger import raise_and_log
 from utils.espocrm import EspoAPI, GetParentID
 from utils.sources import Source
 from utils.translate import translate_text
@@ -57,6 +57,15 @@ class ClassificationSchema:
         )  # number of levels in the schema
         self.version_id = ""  # version ID of the schema
 
+    def get_extra_logs(self) -> dict:
+        """
+        Get extra information on the source for the logs
+        """
+        return {
+            "source-name": self.source.value,
+            "source-origin": self.settings["source-origin"],
+        }
+
     def get_class_id(self, label_en: str) -> str | None:
         """
         Get class id from label_en
@@ -66,7 +75,11 @@ class ClassificationSchema:
         for record in self.data:
             if record.label_en == label_en:
                 return record.id
-        raise ValueError(f"Label {label_en} not found in classification schema")
+        raise_and_log(
+            status_code=500,
+            detail=f"Label {label_en} not found in classification schema",
+            extra_logs=self.get_extra_logs(),
+        )
 
     def get_class_label(self, label_en: str) -> str | None:
         """
@@ -77,7 +90,11 @@ class ClassificationSchema:
         for record in self.data:
             if record.label_en == label_en:
                 return record.label
-        raise ValueError(f"Label {label_en} not found in classification schema")
+        raise_and_log(
+            status_code=500,
+            detail=f"Label {label_en} not found in classification schema",
+            extra_logs=self.get_extra_logs(),
+        )
 
     def get_labels_en(self, level: int, parent: str = None) -> List[str]:
         """
@@ -105,9 +122,10 @@ class ClassificationSchema:
             URL = f"https://kobo.ifrc.org/api/v2/assets/{self.settings['source-origin']}/?format=json"
             form = requests.get(URL, headers=headers).json()
             if "content" not in form.keys():
-                raise HTTPException(
+                raise_and_log(
                     status_code=404,
                     detail=f"Kobo form {self.settings['source-origin']} not found or unauthorized",
+                    extra_logs=self.get_extra_logs(),
                 )
             is_version_id_up_to_date = self.version_id == form["deployed_version_id"]
         elif self.source == Source.ESPOCRM:
@@ -144,7 +162,6 @@ class ClassificationSchema:
         cs_records = []
         translate = self.settings.get("translate", False)
         if self.source == Source.ESPOCRM:
-            logger.info("Loading classification schema from EspocRM.")
             client = EspoAPI(
                 self.settings["source-origin"], self.settings["source-authorization"]
             )
@@ -210,16 +227,16 @@ class ClassificationSchema:
             )  # use as version id the latest modifiedAt
 
         elif self.source == Source.KOBO:
-            logger.info("Loading classification schema from Kobo.")
             headers = {
                 "Authorization": f"Token {self.settings['source-authorization']}"
             }
             URL = f"https://kobo.ifrc.org/api/v2/assets/{self.settings['source-origin']}/?format=json"
             form = requests.get(URL, headers=headers).json()
             if "content" not in form.keys():
-                raise HTTPException(
+                raise_and_log(
                     status_code=404,
                     detail=f"Kobo form {self.settings['source-origin']} not found or unauthorized",
+                    extra_logs=self.get_extra_logs(),
                 )
             self.version_id = form["deployed_version_id"]
             form = form["content"]
@@ -307,10 +324,40 @@ class ClassificationSchema:
                         )
                     )
         else:
-            raise NotImplementedError(
-                f"Classification schema source {self.source.value} is not supported"
+            raise_and_log(
+                status_code=400,
+                detail=f"Failed to load classification schema: source {self.source.value} is not supported",
+                extra_logs=self.get_extra_logs(),
             )
         self.n_levels = len(set([record.level for record in cs_records]))
+
+        # Perform sanity checks for each level in the classification schema
+        for lvl in range(1, self.n_levels + 1):
+            # ensure that all records have unique IDs
+            if len(
+                set([record.id for record in cs_records if record.level == lvl])
+            ) < len([record for record in cs_records if record.level == lvl]):
+                raise_and_log(
+                    status_code=400,
+                    detail=f"Failed to load classification schema: schema has duplicate IDs in level {lvl}",
+                    extra_logs=self.get_extra_logs(),
+                )
+            # ensure that all records have unique labels
+            if len(
+                set([record.label for record in cs_records if record.level == lvl])
+            ) < len([record for record in cs_records if record.level == lvl]):
+                raise_and_log(
+                    status_code=400,
+                    detail=f"Failed to load classification schema: schema has duplicate labels in level {lvl}",
+                    extra_logs=self.get_extra_logs(),
+                )
+            # ensure that there are at least two records in each level
+            if len([record for record in cs_records if record.level == lvl]) < 2:
+                raise_and_log(
+                    status_code=400,
+                    detail=f"Failed to load classification schema: schema has less than two records in level {lvl}",
+                    extra_logs=self.get_extra_logs(),
+                )
         self.data = cs_records
 
     def save_to_cosmos(self):
@@ -350,4 +397,4 @@ class ClassificationSchema:
         try:
             cosmos_container_client.delete_item(body=source_id)
         except CosmosResourceExistsError:
-            logger.info(f"Classification schema {source_id} not found in CosmosDB.")
+            pass

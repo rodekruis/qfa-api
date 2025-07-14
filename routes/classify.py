@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import os
 from typing import Annotated
-from fastapi import APIRouter, Header, Request, HTTPException, Depends
+from fastapi import APIRouter, Header, Request, Depends
 from fastapi.security import APIKeyHeader
 from fastapi.responses import JSONResponse
-from pydantic import Field
 from classification.schema import ClassificationSchema
 from utils.sources import Source
-from utils.logger import logger
+from utils.logger import logger, raise_and_log
 from utils.kobo import clean_kobo_data
 from routes.load import CreateClassificationSchemaHeaders
 from classification.classifier import Classifier
@@ -21,7 +20,7 @@ header_API_key = APIKeyHeader(name="API-KEY")
 def get_source_text(source_text, payload: dict):
     """Get text to classify from payload. Raise error if not found."""
     if source_text not in payload:
-        raise HTTPException(
+        raise_and_log(
             status_code=400,
             detail=f"Field '{source_text}' is required in request body.",
         )
@@ -40,11 +39,16 @@ async def classify_text(
     """
 
     if key != os.getenv("API_KEY"):
-        raise HTTPException(status_code=403)
+        raise_and_log(status_code=403, detail="Invalid API key.")
 
     payload = await request.json()
-
-    logger.info(f"Classifying text from {request.headers['source-name']}.")
+    extra_logs = {
+        "source-name": request.headers["source-name"].lower(),
+        "source-origin": request.headers["source-origin"],
+    }
+    logger.info(
+        f"Classifying text from {request.headers['source-name']}.", extra=extra_logs
+    )
 
     # load classification schema
     schema = ClassificationSchema(source_settings=request.headers)
@@ -54,13 +58,15 @@ async def classify_text(
         # check that classification schema is up-to-date
         if not schema.is_up_to_date():
             logger.info(
-                "Classification schema is outdated, loading from source and saving to CosmosDB."
+                "Classification schema is outdated, loading schema from source and saving to CosmosDB.",
+                extra=extra_logs,
             )
             schema.load_from_source()
             schema.save_to_cosmos()
     except CosmosResourceNotFoundError:
         logger.info(
-            "Classification schema not found in CosmosDB, loading from source and saving to CosmosDB."
+            "Classification schema not found in CosmosDB, loading schema from source and saving to CosmosDB.",
+            extra=extra_logs,
         )
         schema.load_from_source()
         schema.save_to_cosmos()
@@ -74,10 +80,11 @@ async def classify_text(
     # get text to classify
     if schema.source == Source.KOBO:
         if "source-text" not in request.headers:
-            raise HTTPException(
+            raise_and_log(
                 status_code=400,
                 detail="Header 'source-text' is required for Kobo, "
                 "specifying the name of the question to be classified.",
+                extra_logs=extra_logs,
             )
         source_text = request.headers["source-text"]
         text = get_source_text(source_text.lower(), clean_kobo_data(payload))

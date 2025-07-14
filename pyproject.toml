@@ -20,6 +20,7 @@ fuzzywuzzy = "*"
 openai = "*"
 orjson = "*"
 pandas = "*"
+python-Levenshtein = "*"
 transformers = "*"
 uvicorn = "*"
 

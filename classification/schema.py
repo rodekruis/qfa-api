@@ -116,19 +116,25 @@ class ClassificationSchema:
             )
             params = {
                 "select": "modifiedAt",
-                "maxSize": 1,
+                "maxSize": 100,
                 "orderBy": "modifiedAt",
                 "order": "desc",
             }
-            # use as version id the latest modifiedAt
+            # check that version ID (latest ModifiedAt) is the same
+            # and that the number of records in each level is the same
             modifiedAts = []
+            is_version_id_up_to_date = True
             for lvl in range(1, self.n_levels + 1):
-                modifiedAts.append(
-                    client.request("GET", self.settings[f"source-level{lvl}"], params)[
-                        "content"
-                    ]["list"][0]["modifiedAt"]
-                )
-            is_version_id_up_to_date = self.version_id == max(modifiedAts)
+                records = client.request(
+                    "GET", self.settings[f"source-level{lvl}"], params
+                )["content"]["list"]
+                is_version_id_up_to_date = is_version_id_up_to_date and len(
+                    self.get_labels_en(lvl)
+                ) == len(records)
+                modifiedAts.append(records[0]["modifiedAt"])
+            is_version_id_up_to_date = (
+                is_version_id_up_to_date and self.version_id == max(modifiedAts)
+            )
         return is_version_id_up_to_date
 
     def load_from_source(self):
@@ -146,7 +152,6 @@ class ClassificationSchema:
                 "list"
             ]
             list2, list3 = [], []
-            logger.info(f"Level 1 records: {list1}")
             for level1_record in list1:
                 cs_records.append(
                     ClassificationSchemaRecord(

@@ -3,7 +3,6 @@ from classification.schema import ClassificationSchema
 from classification.result import ClassificationResult
 from utils.translate import translate_text
 from transformers import pipeline
-from fastapi import HTTPException
 from openai import AzureOpenAI
 from fuzzywuzzy import process
 import os

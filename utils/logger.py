@@ -1,5 +1,6 @@
 import logging
 import os
+from fastapi import HTTPException
 from dotenv import load_dotenv
 from opentelemetry._logs import set_logger_provider
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
@@ -34,3 +35,21 @@ logging.getLogger("opentelemetry").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 logging.getLogger("openai").setLevel(logging.WARNING)
+
+
+def raise_and_log(status_code: int, detail: str = "", extra_logs: dict = None):
+    """
+    Raise an HTTPException and log the error.
+    Args:
+        status_code (int): HTTP status code.
+        detail (str): Error message to log.
+        extra_logs (dict): Additional information to log.
+    """
+    logger.error(
+        detail,
+        extra=extra_logs,
+    )
+    raise HTTPException(
+        status_code=status_code,
+        detail=detail,
+    )

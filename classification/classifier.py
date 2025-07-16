@@ -20,7 +20,7 @@ elif os.getenv("CLASSIFIER_PROVIDER") == "OpenAI":
     )
 
 
-def classify_text(text: str, classes: List[str]) -> str:
+def classify_text(text: str, classes: List[str]) -> str | None:
     """
     Classify text using the classification model.
 
@@ -29,10 +29,12 @@ def classify_text(text: str, classes: List[str]) -> str:
         classes (list): List of classes to classify against.
 
     Returns:
-        str: Predicted class.
+        str: Predicted class or None if no classes are provided.
     """
+    if len(classes) == 0:
+        return None
     # if only one class is provided, just return it
-    if len(classes) == 1:
+    elif len(classes) == 1:
         return classes[0]
 
     predicted_class = ""
